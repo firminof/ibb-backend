@@ -7,6 +7,7 @@ import {ConfigModule} from "@nestjs/config";
 import {Config} from "./config/config";
 import {EventEmitterModule} from "@nestjs/event-emitter";
 import {ScheduleModule} from "@nestjs/schedule";
+import {UserModule} from "./user/user.module";
 
 @Module({
     imports: [
@@ -18,8 +19,9 @@ import {ScheduleModule} from "@nestjs/schedule";
         EventEmitterModule.forRoot({
             wildcard: true,
         }),
-        ConfigModule.forRoot(),
         ScheduleModule.forRoot(),
+
+        UserModule
     ],
     controllers: [AppController],
     providers: [AppService],
