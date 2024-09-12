@@ -6,8 +6,7 @@ import {UserAddressDto, UserDto} from "../../dto/create-user.dto";
 @Entity()
 export class UserEntity implements User {
     @ObjectIdColumn()
-    @ApiProperty({type: String})
-    id?: User['id'];
+    _id?: User['_id'];
 
     @Column()
     @ApiProperty({type: String})
@@ -42,7 +41,7 @@ export class UserEntity implements User {
     data_nascimento: User['data_nascimento'];
 
     @Column()
-    @ApiProperty({type: Boolean})
+    @ApiProperty({type: String})
     estado_civil: User['estado_civil'];
 
     @Column()

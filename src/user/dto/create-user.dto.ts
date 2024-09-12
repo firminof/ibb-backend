@@ -78,11 +78,12 @@ export class CreateUserDto {
     @IsOptional()
     foto: User['foto'];
 
-    @ApiProperty({type: Date})
+    @ApiProperty({ type: Date, format: 'YYYY-MM-DD' })
     @IsNotEmpty()
+    @IsDateString()
     data_nascimento: User['data_nascimento'];
 
-    @ApiProperty({type: Boolean})
+    @ApiProperty({type: String})
     @IsNotEmpty()
     estado_civil: User['estado_civil'];
 
@@ -90,7 +91,7 @@ export class CreateUserDto {
     @IsOptional()
     conjugue: User['conjugue'];
 
-    @ApiProperty({ type: String, format: 'YYYY-MM-DD' })
+    @ApiProperty({ type: Date, format: 'YYYY-MM-DD' })
     @IsOptional()
     @IsDateString()
     data_casamento: User['data_casamento'];
@@ -107,7 +108,7 @@ export class CreateUserDto {
     @IsNotEmpty()
     status: User['status'];
 
-    @ApiPropertyOptional({type: Date})
+    @ApiProperty({ type: Date, format: 'YYYY-MM-DD' })
     @IsOptional()
     transferencia: User['transferencia'];
 

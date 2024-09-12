@@ -1,3 +1,5 @@
+import {ObjectId} from "typeorm";
+
 export interface UserAddress {
     cep: string;
     rua: string;
@@ -31,7 +33,7 @@ export interface IUser {
 }
 
 export interface User {
-    id?: string;
+    _id?: string;
     role: UserRoles;
     nome: string;
     cpf: string;

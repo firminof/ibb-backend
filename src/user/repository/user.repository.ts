@@ -1,4 +1,4 @@
-import {DataSource, FindManyOptions, Repository} from "typeorm";
+import {DataSource, FindManyOptions, ObjectId, Repository} from "typeorm";
 import {UserEntity} from "../domain/entity/user.entity";
 import {Injectable} from "@nestjs/common";
 
@@ -26,7 +26,11 @@ export class UserRepository extends Repository<UserEntity> {
     }
 
     async findById(id: string): Promise<UserEntity> {
-        return await this.findById(id);
+        return await this.findOneById(id);
+    }
+
+    async deleteUser(user: UserEntity) {
+        return this.remove(user);
     }
 
     async findByEmail(email: string): Promise<any> {
