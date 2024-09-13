@@ -93,7 +93,6 @@ export class CreateUserDto {
 
     @ApiProperty({ type: Date, format: 'YYYY-MM-DD' })
     @IsOptional()
-    @IsDateString()
     data_casamento: User['data_casamento'];
 
     @ApiProperty({type: Boolean})
