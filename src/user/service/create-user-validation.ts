@@ -15,6 +15,10 @@ export class CreateUserValidation {
             validateCPFLength(createUserDto.cpf);
         }
 
+        if (createUserDto.ministerio.length === 0) {
+            createUserDto.ministerio = [];
+        }
+
         return createUserDto;
     }
 }

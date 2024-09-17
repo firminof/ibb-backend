@@ -1,7 +1,7 @@
 import {ApiProperty, ApiPropertyOptional} from "@nestjs/swagger";
 import {Type} from "class-transformer";
 import {User, UserAddress} from "../domain/entity/abstractions/user";
-import {IsDateString, IsEmail, IsNotEmpty, IsOptional, IsUppercase} from "class-validator";
+import {IsDate, IsDateString, IsEmail, IsNotEmpty, IsOptional, IsUppercase} from "class-validator";
 
 export class UserDto {
     @ApiProperty({type: Number})
@@ -78,9 +78,8 @@ export class CreateUserDto {
     @IsOptional()
     foto: User['foto'];
 
-    @ApiProperty({ type: Date, format: 'YYYY-MM-DD' })
+    @ApiProperty({ type: Date })
     @IsNotEmpty()
-    @IsDateString()
     data_nascimento: User['data_nascimento'];
 
     @ApiProperty({type: String})
@@ -91,7 +90,7 @@ export class CreateUserDto {
     @IsOptional()
     conjugue: User['conjugue'];
 
-    @ApiProperty({ type: Date, format: 'YYYY-MM-DD' })
+    @ApiProperty({ type: Date})
     @IsOptional()
     data_casamento: User['data_casamento'];
 
@@ -107,7 +106,7 @@ export class CreateUserDto {
     @IsNotEmpty()
     status: User['status'];
 
-    @ApiProperty({ type: Date, format: 'YYYY-MM-DD' })
+    @ApiProperty({ type: Date })
     @IsOptional()
     transferencia: User['transferencia'];
 

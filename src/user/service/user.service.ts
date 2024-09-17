@@ -5,6 +5,8 @@ import {CreateUserDto} from "../dto/create-user.dto";
 import {CreateUserValidation} from "./create-user-validation";
 import {UpdateUserDto} from "../dto/update-user.dto";
 import {DeleteUserDto} from "../dto/delete-user.dto";
+import {IUserResponseApi} from "../dto/list-users.dto";
+import {formatListMember} from "../../common/helpers/helpers";
 
 @Injectable()
 export class UserService {
@@ -14,12 +16,36 @@ export class UserService {
     ) {
     }
 
-    async getAll(): Promise<UserEntity[]> {
+    async getAll(): Promise<IUserResponseApi[]> {
         Logger.log(`> [Service][User][GET][getAll] - init`);
         try {
-            return await this.userRepository.getAll();
+            const allMembers: UserEntity[] = await this.userRepository.getAll();
+
+            return formatListMember(allMembers);
         } catch (e) {
             Logger.log(`> [Service][User][GET][getAll] catch - ${JSON.stringify(e)}`);
+            throw new BadRequestException(e['message']);
+        }
+    }
+
+    async getAllBirthdaysMonth(month: number): Promise<IUserResponseApi[]> {
+        Logger.log(`> [Service][User][GET][getAllBirthdaysMonth] - init`);
+        try {
+            const allMembers: UserEntity[] = await this.userRepository.getAll();
+
+            const allBirthdaysMonth: UserEntity[] = [];
+
+            allMembers.forEach((member: UserEntity) => {
+                const dataNasc: Date = new Date(`${member.data_nascimento.toString().split('T')[0]}T03:01:00.000Z`);
+
+                if ((dataNasc.getMonth() + 1) === Number(month)) {
+                    allBirthdaysMonth.push(member);
+                }
+            })
+
+            return formatListMember(allBirthdaysMonth);
+        } catch (e) {
+            Logger.log(`> [Service][User][GET][getAllBirthdaysMonth] catch - ${JSON.stringify(e)}`);
             throw new BadRequestException(e['message']);
         }
     }
@@ -34,7 +60,7 @@ export class UserService {
                 throw new BadRequestException('Email já em uso!');
             }
 
-            const validatedInput = this.createUserValidation.validate(data);
+            const validatedInput: CreateUserDto = this.createUserValidation.validate(data);
 
             const newUser: UserEntity = {
                 conjugue: validatedInput.conjugue,

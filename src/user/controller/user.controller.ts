@@ -5,6 +5,7 @@ import {UserService} from "../service/user.service";
 import {CreateUserDto} from "../dto/create-user.dto";
 import {UpdateUserDto} from "../dto/update-user.dto";
 import {DeleteUserDto} from "../dto/delete-user.dto";
+import {IUserResponseApi} from "../dto/list-users.dto";
 
 @Controller('v1/user')
 @ApiTags('User')
@@ -18,9 +19,21 @@ export class UserController {
         type: UserEntity,
         isArray: true,
     })
-    async getAll(): Promise<UserEntity[]> {
+    async getAll(): Promise<IUserResponseApi[]> {
         Logger.log(`> [Controller][User][GET][getAll] - init`);
         return this.userService.getAll();
+    }
+
+    @Get('birthdays-month/:month')
+    @HttpCode(HttpStatus.OK)
+    @ApiResponse({
+        status: HttpStatus.OK,
+        type: UserEntity,
+        isArray: true,
+    })
+    async getAllBirthdaysMonth(@Param('month') month: number): Promise<IUserResponseApi[]> {
+        Logger.log(`> [Controller][User][GET][getAllBirthdaysMonth] - init`);
+        return this.userService.getAllBirthdaysMonth(month);
     }
 
     @Post()

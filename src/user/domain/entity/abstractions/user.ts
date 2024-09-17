@@ -46,7 +46,7 @@ export interface User {
     conjugue?: IUser;
     data_casamento?: Date;
     possui_filhos: boolean;
-    filhos: IUser;
+    filhos: IUser[];
     status: string;
     transferencia: Date;
     diacono: IUser;
