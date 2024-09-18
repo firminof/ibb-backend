@@ -13,7 +13,7 @@ export interface IUserResponseApi {
     telefone: string;
     foto: string;
     data_nascimento: string;
-    estado_civil: boolean;
+    estado_civil: string;
     conjugue: IUser | null;
     data_casamento?: string | null;
     possui_filhos: boolean;

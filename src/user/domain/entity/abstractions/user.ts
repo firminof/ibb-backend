@@ -42,7 +42,7 @@ export interface User {
     telefone: string;
     foto?: string;
     data_nascimento: Date;
-    estado_civil: boolean;
+    estado_civil: string;
     conjugue?: IUser;
     data_casamento?: Date;
     possui_filhos: boolean;
