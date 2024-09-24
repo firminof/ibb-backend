@@ -85,4 +85,40 @@ export class UserEntity implements User {
 
     @UpdateDateColumn()
     updatedAt: Date;
+
+    @Column()
+    @ApiPropertyOptional({type: Date})
+    data_ingresso
+
+    @Column()
+    @ApiProperty({type: String})
+    forma_ingresso
+
+    @Column()
+    @ApiProperty({type: String})
+    local_ingresso
+
+    @Column()
+    @ApiProperty({type: String})
+    motivo_transferencia
+
+    @Column()
+    @ApiPropertyOptional({type: Date})
+    falecimento
+
+    @Column()
+    @ApiProperty({type: String})
+    motivo_falecimento
+
+    @Column()
+    @ApiPropertyOptional({type: Date})
+    excluido
+
+    @Column()
+    @ApiProperty({type: String})
+    motivo_exclusao
+
+    @Column()
+    @ApiProperty({type: String})
+    motivo_visita
 }

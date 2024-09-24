@@ -4,6 +4,7 @@ import {UserRepository} from "./repository/user.repository";
 import {TypeOrmModule} from "@nestjs/typeorm";
 import {UserService} from "./service/user.service";
 import {CreateUserValidation} from "./service/create-user-validation";
+import {EmailService} from "./service/email.service";
 
 @Module({
     imports: [
@@ -13,7 +14,8 @@ import {CreateUserValidation} from "./service/create-user-validation";
     providers: [
         UserService,
         UserRepository,
-        CreateUserValidation
+        CreateUserValidation,
+        EmailService
     ],
     exports: [UserService, TypeOrmModule, UserRepository]
 })

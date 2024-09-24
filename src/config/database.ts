@@ -10,4 +10,8 @@ export const ORMConfig: MongoConnectionOptions = {
   url: process.env.DB_URL,
   useUnifiedTopology: true,
   logging: true,
+  synchronize: true,
+  logger: 'simple-console',
+  entityPrefix: 'ibb-',
+  database: 'ibb'
 };

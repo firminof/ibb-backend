@@ -6,6 +6,8 @@ import {CreateUserDto} from "../dto/create-user.dto";
 import {UpdateUserDto} from "../dto/update-user.dto";
 import {DeleteUserDto} from "../dto/delete-user.dto";
 import {IUserResponseApi} from "../dto/list-users.dto";
+import {SendEmailDto} from "../dto/send-email.dto";
+import {CreateUserInviteDto} from "../dto/create-user-invite.dto";
 
 @Controller('v1/user')
 @ApiTags('User')
@@ -57,5 +59,23 @@ export class UserController {
     @ApiResponse({status: HttpStatus.OK})
     async delete(@Param() params: DeleteUserDto) {
         return this.userService.delete(params);
+    }
+
+    @Post('/email/send-invite')
+    @HttpCode(HttpStatus.CREATED)
+    @ApiResponse({status: HttpStatus.CREATED})
+    async sendInvite(@Body() sendEmailDto: SendEmailDto) {
+        Logger.log(`> [Controller][User][POST][sendInvite] - init`);
+        return this.userService.sendInvite(sendEmailDto);
+    }
+
+    @Post('accept-invite')
+    @HttpCode(HttpStatus.CREATED)
+    @ApiResponse({status: HttpStatus.CREATED})
+    async acceptInvite(@Body() data: CreateUserInviteDto) {
+        Logger.log(`> [Controller][User][POST][acceptInvite] - init`);
+        Logger.log(`> [Controller][User][POST][acceptInvite] data - ${data}`);
+
+        return this.userService.acceptInvite(data);
     }
 }

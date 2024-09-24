@@ -16,6 +16,24 @@ export enum UserRoles {
     'MEMBRO' = 'MEMBRO',
 }
 
+export enum StatusEnum {
+    'visitante' = 'visitante',
+    'congregado' = 'congregado',
+    'ativo' = 'ativo',
+    'inativo' = 'inativo',
+    'transferido' = 'transferido',
+    'falecido' = 'falecido',
+    'excluido' = 'excluido',
+}
+
+export enum EstadoCivilEnum {
+    'solteiro' = 'solteiro',
+    'casado' = 'casado',
+    'separado' = 'separado',
+    'divorciado' = 'divorciado',
+    'viuvo' = 'viuvo',
+}
+
 export enum Providers {
     'microsoft.com' = 'microsoft.com',
     'google.com' = 'google.com',
@@ -42,14 +60,28 @@ export interface User {
     telefone: string;
     foto?: string;
     data_nascimento: Date;
-    estado_civil: string;
+    estado_civil: EstadoCivilEnum;
     conjugue?: IUser;
     data_casamento?: Date;
     possui_filhos: boolean;
     filhos: IUser[];
-    status: string;
-    transferencia: Date;
+    status: StatusEnum;
+    transferencia: Date | null;
     diacono: IUser;
     ministerio: number[];
     endereco?: UserAddress;
+
+    data_ingresso?: Date | null;
+    forma_ingresso?: string | null;
+    local_ingresso?: string | null;
+
+    motivo_transferencia?: string | null;
+
+    falecimento?: Date | null;
+    motivo_falecimento?: string | null;
+
+    excluido?: Date | null;
+    motivo_exclusao?: string | null;
+
+    motivo_visita?: string | null;
 }

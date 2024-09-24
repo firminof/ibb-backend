@@ -2,52 +2,9 @@ import {ApiProperty, ApiPropertyOptional} from "@nestjs/swagger";
 import {Type} from "class-transformer";
 import {User, UserAddress} from "../domain/entity/abstractions/user";
 import {IsDate, IsDateString, IsEmail, IsNotEmpty, IsOptional, IsUppercase} from "class-validator";
+import {UserAddressDto, UserDto} from "./create-user.dto";
 
-export class UserDto {
-    @ApiProperty({type: Number})
-    @Type(() => Number)
-    id: number;
-
-    @ApiProperty({type: String})
-    @Type(() => String)
-    nome: string;
-}
-
-export class UserAddressDto {
-    @ApiProperty({ type: String })
-    @Type(() => String)
-    cep: UserAddress['cep'];
-
-    @ApiProperty({ type: String })
-    @Type(() => String)
-    rua: UserAddress['rua'];
-
-    @ApiProperty({ type: String })
-    @Type(() => String)
-    numero: UserAddress['numero'];
-
-    @ApiPropertyOptional({ type: String })
-    @Type(() => String)
-    complemento: UserAddress['complemento'];
-
-    @ApiProperty({ type: String })
-    @Type(() => String)
-    bairro: UserAddress['bairro'];
-
-    @ApiProperty({ type: String })
-    @Type(() => String)
-    cidade: UserAddress['cidade'];
-
-    @ApiProperty({ type: String })
-    @Type(() => String)
-    estado: UserAddress['estado'];
-
-    @ApiProperty({ type: String })
-    @Type(() => String)
-    pais: UserAddress['pais'];
-}
-
-export class CreateUserDto {
+export class CreateUserInviteDto {
     @ApiProperty({type: String})
     @IsNotEmpty()
     @IsUppercase()
@@ -106,14 +63,6 @@ export class CreateUserDto {
     @IsNotEmpty()
     status: User['status'];
 
-    @ApiProperty({ type: Date })
-    @IsOptional()
-    transferencia: User['transferencia'];
-
-    @ApiProperty({type: UserDto})
-    @IsNotEmpty()
-    diacono: User['diacono'];
-
     @ApiProperty({type: [Number]})
     @IsNotEmpty()
     ministerio: User['ministerio'] = [];
@@ -157,4 +106,9 @@ export class CreateUserDto {
     @ApiProperty({ type: String })
     @IsOptional()
     motivo_visita: User['motivo_visita']
+
+    @IsNotEmpty()
+    login: {
+        password: string;
+    }
 }
