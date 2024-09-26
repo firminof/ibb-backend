@@ -88,37 +88,37 @@ export class UserEntity implements User {
 
     @Column()
     @ApiPropertyOptional({type: Date})
-    data_ingresso
+    data_ingresso: Date;
 
     @Column()
     @ApiProperty({type: String})
-    forma_ingresso
+    forma_ingresso: string;
 
     @Column()
     @ApiProperty({type: String})
-    local_ingresso
+    local_ingresso: string;
 
     @Column()
     @ApiProperty({type: String})
-    motivo_transferencia
+    motivo_transferencia: string;
 
     @Column()
     @ApiPropertyOptional({type: Date})
-    falecimento
+    falecimento: Date;
 
     @Column()
     @ApiProperty({type: String})
-    motivo_falecimento
+    motivo_falecimento: string;
 
     @Column()
     @ApiPropertyOptional({type: Date})
-    excluido
+    excluido: Date;
 
     @Column()
     @ApiProperty({type: String})
-    motivo_exclusao
+    motivo_exclusao: string;
 
     @Column()
     @ApiProperty({type: String})
-    motivo_visita
+    motivo_visita: string;
 }

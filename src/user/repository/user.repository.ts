@@ -1,4 +1,4 @@
-import {DataSource, FindManyOptions, ObjectId, Repository} from "typeorm";
+import {DataSource, Repository} from "typeorm";
 import {UserEntity} from "../domain/entity/user.entity";
 import {Injectable} from "@nestjs/common";
 

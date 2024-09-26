@@ -58,6 +58,7 @@ export class UserController {
     @HttpCode(HttpStatus.OK)
     @ApiResponse({status: HttpStatus.OK})
     async delete(@Param() params: DeleteUserDto) {
+        Logger.log(`> [Controller][User][DELETE][Update] - init`);
         return this.userService.delete(params);
     }
 

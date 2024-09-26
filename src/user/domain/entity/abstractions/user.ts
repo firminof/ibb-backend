@@ -1,5 +1,3 @@
-import {ObjectId} from "typeorm";
-
 export interface UserAddress {
     cep: string;
     rua: string;

@@ -8,6 +8,7 @@ import {Config} from "./config/config";
 import {EventEmitterModule} from "@nestjs/event-emitter";
 import {ScheduleModule} from "@nestjs/schedule";
 import {UserModule} from "./user/user.module";
+import {MinistrieModule} from "./ministrie/ministrie.module";
 
 @Module({
     imports: [
@@ -21,7 +22,8 @@ import {UserModule} from "./user/user.module";
         }),
         ScheduleModule.forRoot(),
 
-        UserModule
+        UserModule,
+        MinistrieModule
     ],
     controllers: [AppController],
     providers: [AppService],

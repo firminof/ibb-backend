@@ -9,7 +9,6 @@ import {IUserResponseApi} from "../dto/list-users.dto";
 import {formatListMember} from "../../common/helpers/helpers";
 import {EmailService} from "./email.service";
 import {SendEmailDto} from "../dto/send-email.dto";
-import {SendInviteEmailBody} from "../../common/constants/send-invite-email-body.constant";
 import {CreateUserInviteDto} from "../dto/create-user-invite.dto";
 
 @Injectable()
