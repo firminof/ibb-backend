@@ -8,6 +8,7 @@ import {DeleteUserDto} from "../dto/delete-user.dto";
 import {IUserResponseApi} from "../dto/list-users.dto";
 import {SendEmailDto} from "../dto/send-email.dto";
 import {CreateUserInviteDto} from "../dto/create-user-invite.dto";
+import {UpdateInfoDto} from "../dto/update-info.dto";
 
 @Controller('v1/user')
 @ApiTags('User')
@@ -36,6 +37,18 @@ export class UserController {
     async getAllBirthdaysMonth(@Param('month') month: number): Promise<IUserResponseApi[]> {
         Logger.log(`> [Controller][User][GET][getAllBirthdaysMonth] - init`);
         return this.userService.getAllBirthdaysMonth(month);
+    }
+
+    @Get('get-by-id/:id')
+    @HttpCode(HttpStatus.OK)
+    @ApiResponse({
+        status: HttpStatus.OK,
+        type: UserEntity,
+        isArray: true,
+    })
+    async getById(@Param('id') id: string): Promise<IUserResponseApi> {
+        Logger.log(`> [Controller][User][GET][getById] - init`);
+        return this.userService.getById(id);
     }
 
     @Post()
@@ -78,5 +91,15 @@ export class UserController {
         Logger.log(`> [Controller][User][POST][acceptInvite] data - ${data}`);
 
         return this.userService.acceptInvite(data);
+    }
+
+    @Post('update-info')
+    @HttpCode(HttpStatus.CREATED)
+    @ApiResponse({status: HttpStatus.CREATED})
+    async updateInfo(@Body() data: UpdateInfoDto) {
+        Logger.log(`> [Controller][User][POST][updateInfo] - init`);
+        Logger.log(`> [Controller][User][POST][updateInfo] data - ${data}`);
+
+        return this.userService.updateInfo(data);
     }
 }

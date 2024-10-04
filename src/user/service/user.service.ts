@@ -10,6 +10,8 @@ import {formatListMember} from "../../common/helpers/helpers";
 import {EmailService} from "./email.service";
 import {SendEmailDto} from "../dto/send-email.dto";
 import {CreateUserInviteDto} from "../dto/create-user-invite.dto";
+import {ObjectId} from "mongodb";
+import {UpdateInfoDto} from "../dto/update-info.dto";
 
 @Injectable()
 export class UserService {
@@ -28,6 +30,25 @@ export class UserService {
             return formatListMember(allMembers);
         } catch (e) {
             Logger.log(`> [Service][User][GET][getAll] catch - ${JSON.stringify(e)}`);
+            throw new BadRequestException(e['message']);
+        }
+    }
+
+    async getById(id: string): Promise<IUserResponseApi> {
+        Logger.log(`> [Service][User][GET][getById] - init`);
+        try {
+            const user: UserEntity = await this.userRepository.findById(id);
+            Logger.log(`> [Service][User][GET][getById] - ${JSON.stringify(user)}`);
+
+            if (!user) {
+                throw new NotFoundException('Membro não encontrado!');
+            }
+
+            const formatList = formatListMember([user]);
+
+            return formatList[0];
+        } catch (e) {
+            Logger.log(`> [Service][User][GET][getById] catch - ${JSON.stringify(e)}`);
             throw new BadRequestException(e['message']);
         }
     }
@@ -107,6 +128,16 @@ export class UserService {
         }
     }
 
+    async updateInfo(data: UpdateInfoDto) {
+        Logger.log(`> [Service][User][POST][updateInfo] - init`);
+        try {
+            return Logger.log(`> [Service][User][POST][updateInfo] - finished`);
+        } catch (e) {
+            Logger.log(`> [Service][User][POST][updateInfo] catch - ${JSON.stringify(e)}`);
+            throw new BadRequestException(e['message']);
+        }
+    }
+
     async acceptInvite(data: CreateUserInviteDto) {
         Logger.log(`> [Service][User][POST][acceptInvite] - init`);
         try {
@@ -166,6 +197,7 @@ export class UserService {
 
     async update(id: string, data: UpdateUserDto) {
         Logger.log(`> [Service][User][PUT][update] init`);
+        Logger.log(`> [Service][User][PUT][update][data] - ${JSON.stringify(data)}`);
         try {
             const user: UserEntity = await this.userRepository.findById(id);
             Logger.log(`> [Service][User][PUT][update][findById] - ${JSON.stringify(user)}`);

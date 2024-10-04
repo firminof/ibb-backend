@@ -97,7 +97,9 @@ export const formatListMember = (allMembers: UserEntity[]) => {
         const nome: string = formatNome(member.nome);
 
         const updatedAt: string = formatDataPtbr(member.updatedAt);
-
+        const falecimento: string = formatDataPtbr(member.falecimento);
+        const excluido: string = formatDataPtbr(member.excluido);
+        const data_ingresso: string = formatDataPtbr(member.data_ingresso);
         const diacono: IUser = {
             id: member.diacono.id,
             nome: member && member.diacono && member.diacono.nome ? formatNome(member.diacono.nome) : ''
@@ -130,7 +132,16 @@ export const formatListMember = (allMembers: UserEntity[]) => {
             telefone,
             data_casamento,
             transferencia,
-            updatedAt
+            falecimento,
+            excluido,
+            updatedAt,
+            data_ingresso,
+            forma_ingresso: member.forma_ingresso,
+            local_ingresso: member.local_ingresso,
+            motivo_transferencia: member.motivo_transferencia,
+            motivo_falecimento: member.motivo_falecimento,
+            motivo_exclusao: member.motivo_exclusao,
+            motivo_visita: member.motivo_visita,
         }
 
         return user;

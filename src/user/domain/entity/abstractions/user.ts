@@ -64,7 +64,6 @@ export interface User {
     possui_filhos: boolean;
     filhos: IUser[];
     status: StatusEnum;
-    transferencia: Date | null;
     diacono: IUser;
     ministerio: number[];
     endereco?: UserAddress;
@@ -73,6 +72,7 @@ export interface User {
     forma_ingresso?: string | null;
     local_ingresso?: string | null;
 
+    transferencia: Date | null;
     motivo_transferencia?: string | null;
 
     falecimento?: Date | null;

@@ -122,4 +122,40 @@ export class UpdateUserDto {
     @ApiPropertyOptional({ type: UserAddressDto })
     @IsOptional()
     endereco?: User['endereco'];
+
+    @ApiProperty({ type: Date })
+    @IsOptional()
+    data_ingresso: User['data_ingresso']
+
+    @ApiProperty({ type: String })
+    @IsOptional()
+    forma_ingresso: User['forma_ingresso']
+
+    @ApiProperty({ type: String })
+    @IsOptional()
+    local_ingresso: User['local_ingresso']
+
+    @ApiProperty({ type: String })
+    @IsOptional()
+    motivo_transferencia: User['motivo_transferencia']
+
+    @ApiProperty({ type: Date })
+    @IsOptional()
+    falecimento: User['falecimento']
+
+    @ApiProperty({ type: String })
+    @IsOptional()
+    motivo_falecimento: User['motivo_falecimento']
+
+    @ApiProperty({ type: Date })
+    @IsOptional()
+    excluido: User['excluido']
+
+    @ApiProperty({ type: String })
+    @IsOptional()
+    motivo_exclusao: User['motivo_exclusao']
+
+    @ApiProperty({ type: String })
+    @IsOptional()
+    motivo_visita: User['motivo_visita']
 }

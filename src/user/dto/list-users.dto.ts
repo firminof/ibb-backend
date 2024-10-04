@@ -19,9 +19,24 @@ export interface IUserResponseApi {
     possui_filhos: boolean;
     filhos: IUser[]  | null;
     status: string;
-    transferencia: string | null;
+
     diacono: IUser;
     ministerio: number[];
     role?: string;
     updatedAt: string;
+
+    data_ingresso?: string | null;
+    forma_ingresso?: string | null;
+    local_ingresso?: string | null;
+
+    transferencia: string | null;
+    motivo_transferencia?: string | null;
+
+    falecimento?: string | null;
+    motivo_falecimento?: string | null;
+
+    excluido?: string | null;
+    motivo_exclusao?: string | null;
+
+    motivo_visita?: string | null;
 }
