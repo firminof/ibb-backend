@@ -121,4 +121,7 @@ export class UserEntity implements User {
     @Column()
     @ApiProperty({type: String})
     motivo_visita: string;
+
+    @Column()
+    providersInfo: User['providersInfo'] = [];
 }

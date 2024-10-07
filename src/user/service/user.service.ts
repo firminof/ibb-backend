@@ -10,15 +10,18 @@ import {formatListMember} from "../../common/helpers/helpers";
 import {EmailService} from "./email.service";
 import {SendEmailDto} from "../dto/send-email.dto";
 import {CreateUserInviteDto} from "../dto/create-user-invite.dto";
-import {ObjectId} from "mongodb";
 import {UpdateInfoDto} from "../dto/update-info.dto";
+import {formatPhoneNumber} from "../../common/validations/telefone";
+import {AuthService} from "../../auth/services/auth.service";
+import {Providers} from "../domain/entity/abstractions/user";
 
 @Injectable()
 export class UserService {
     constructor(
         private userRepository: UserRepository,
         private createUserValidation: CreateUserValidation,
-        private emailService: EmailService
+        private emailService: EmailService,
+        private authService: AuthService
     ) {
     }
 
@@ -116,24 +119,55 @@ export class UserService {
                 motivo_exclusao: validatedInput.motivo_exclusao,
                 motivo_falecimento: validatedInput.motivo_falecimento,
                 motivo_transferencia: validatedInput.motivo_transferencia,
-                motivo_visita: validatedInput.motivo_visita
+                motivo_visita: validatedInput.motivo_visita,
+                providersInfo: []
             }
 
             const saved = await this.userRepository.save(newUser);
+            const phoneNumber = formatPhoneNumber(saved.telefone);
+
+            const savedFirebase = {
+                mongoId: saved._id,
+                name: saved.nome,
+                email: saved.email,
+                role: saved.role,
+                phoneNumber ,
+            };
+
+            if (saved) {
+                try {
+                    const userFirebase = await this.authService.registerUser(savedFirebase);
+
+                    await this.update(saved._id, {
+                        providersInfo: [{
+                            providerId: Providers.password,
+                            uid: userFirebase.uid
+                        }]
+                    })
+                } catch (e) {
+                    await this.userRepository.delete(saved._id);
+                    throw new BadRequestException(
+                        `Error while creating user in Firebase - ${e.message}`,
+                    );
+                }
+            }
+
             Logger.log(`> [Service][User][POST][Create] saved - ${JSON.stringify(saved)}`);
+            Logger.log(`> [Service][User][POST][Create] savedFirebase - ${JSON.stringify(savedFirebase)}`);
             Logger.log(`> [Service][User][POST][Create] - finished`);
+            return saved;
         } catch (e) {
             Logger.log(`> [Service][User][POST][Create] catch - ${JSON.stringify(e)}`);
             throw new BadRequestException(e['message']);
         }
     }
 
-    async updateInfo(data: UpdateInfoDto) {
-        Logger.log(`> [Service][User][POST][updateInfo] - init`);
+    async registrationUpdate(data: UpdateInfoDto) {
+        Logger.log(`> [Service][User][POST][registrationUpdate] - init`);
         try {
-            return Logger.log(`> [Service][User][POST][updateInfo] - finished`);
+            return Logger.log(`> [Service][User][POST][registrationUpdate] - finished`);
         } catch (e) {
-            Logger.log(`> [Service][User][POST][updateInfo] catch - ${JSON.stringify(e)}`);
+            Logger.log(`> [Service][User][POST][registrationUpdate] catch - ${JSON.stringify(e)}`);
             throw new BadRequestException(e['message']);
         }
     }
@@ -182,7 +216,8 @@ export class UserService {
                 motivo_exclusao: null,
                 motivo_falecimento: null,
                 motivo_transferencia: null,
-                motivo_visita: null
+                motivo_visita: null,
+                providersInfo: []
 
             }
 
@@ -229,6 +264,7 @@ export class UserService {
             }
 
             await this.userRepository.deleteUser(user);
+            await this.authService.removeUser(user);
         } catch (e) {
             Logger.log(`> [Service][User][DELETE] catch - ${JSON.stringify(e)}`);
             throw new BadRequestException(e['message']);

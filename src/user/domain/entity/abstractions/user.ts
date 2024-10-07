@@ -82,4 +82,6 @@ export interface User {
     motivo_exclusao?: string | null;
 
     motivo_visita?: string | null;
+
+    providersInfo: FirebaseProviderInfo[];
 }

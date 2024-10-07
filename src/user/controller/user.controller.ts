@@ -96,10 +96,62 @@ export class UserController {
     @Post('update-info')
     @HttpCode(HttpStatus.CREATED)
     @ApiResponse({status: HttpStatus.CREATED})
-    async updateInfo(@Body() data: UpdateInfoDto) {
-        Logger.log(`> [Controller][User][POST][updateInfo] - init`);
-        Logger.log(`> [Controller][User][POST][updateInfo] data - ${data}`);
+    async registrationUpdate(@Body() data: UpdateInfoDto) {
+        Logger.log(`> [Controller][User][POST][registrationUpdate] - init`);
+        Logger.log(`> [Controller][User][POST][registrationUpdate] data - ${data}`);
 
-        return this.userService.updateInfo(data);
+        return this.userService.registrationUpdate(data);
     }
 }
+
+// {
+//     "role": "MEMBRO",
+//     "nome": "Leandro Bento Firmino Lemos",
+//     "cpf": "13208982623",
+//     "rg": "19499706",
+//     "email": "filipeff@gmail.com",
+//     "telefone": "(35) 98469-3042",
+//     "foto": "",
+//     "data_nascimento": "2024-10-16T22:17:19.985Z",
+//     "estado_civil": "solteiro",
+//     "conjugue": {
+//     "id": 0,
+//         "nome": ""
+// },
+//     "data_casamento": "",
+//     "possui_filhos": false,
+//     "filhos": [
+//     {
+//         "id": 0,
+//         "nome": ""
+//     }
+// ],
+//     "status": "visitante",
+//     "transferencia": "",
+//     "diacono": {
+//     "id": 0,
+//         "nome": ""
+// },
+//     "ministerio": [
+//     0
+// ],
+//     "endereco": {
+//     "cep": "",
+//         "rua": "",
+//         "numero": "",
+//         "complemento": "",
+//         "bairro": "",
+//         "cidade": "",
+//         "estado": "",
+//         "pais": ""
+// },
+//     "data_ingresso": "2021-10-06T22:17:19.985Z",
+//     "forma_ingresso": "aclamacao",
+//     "local_ingresso": "brooklin",
+//     "motivo_transferencia": "outra igreja",
+//     "falecimento": "",
+//     "motivo_falecimento": "",
+//     "excluido": "",
+//     "motivo_exclusao": "",
+//     "motivo_visita": ""
+// }
