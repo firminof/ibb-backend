@@ -21,7 +21,7 @@ export interface IUserResponseApi {
     status: string;
 
     diacono: IUser;
-    ministerio: number[];
+    ministerio: string[];
     role?: string;
     updatedAt: string;
 

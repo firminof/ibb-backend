@@ -14,6 +14,7 @@ import {UpdateInfoDto} from "../dto/update-info.dto";
 import {formatPhoneNumber} from "../../common/validations/telefone";
 import {AuthService} from "../../auth/services/auth.service";
 import {Providers} from "../domain/entity/abstractions/user";
+import * as process from "process";
 
 @Injectable()
 export class UserService {
@@ -82,10 +83,18 @@ export class UserService {
         Logger.log(`> [Service][User][POST][Create] - init`);
         try {
             const user = await this.userRepository.findByEmail(data.email);
+
+            const userFirebase = await this.authService.findUserByEmail(data.email);
+
             Logger.log(`> [Service][User][Post][POST] user - ${JSON.stringify(user)}`);
+            Logger.log(`> [Service][User][Post][POST] userFirebase - ${JSON.stringify(userFirebase)}`);
 
             if (user) {
                 throw new BadRequestException('Email já em uso!');
+            }
+
+            if (userFirebase) {
+                throw new BadRequestException('Email já em uso no Firebase!');
             }
 
             const validatedInput: CreateUserDto = this.createUserValidation.validate(data);
@@ -366,7 +375,7 @@ export class UserService {
     <p>Estamos felizes em convidá-lo(a) para se juntar à <b>Igreja Batista do Brooklin (IBB)</b>.</p>
 
     <p>Clique no link abaixo para aceitar o convite e completar seu cadastro.</p>
-    <a href="http://localhost:3000/invite?email=${data.to}" class="button">Aceitar Convite e atualizar dados</a>
+    <a href="${process.env.APPLICATION_URL}/invite?email=${data.to}" class="button">Aceitar Convite e atualizar dados</a>
     <br/>
     <br/>
   </div>

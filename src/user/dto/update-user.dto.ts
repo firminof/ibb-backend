@@ -115,7 +115,7 @@ export class UpdateUserDto {
     @IsOptional()
     diacono?: User['diacono'];
 
-    @ApiPropertyOptional({type: Number})
+    @ApiPropertyOptional({type: [String]})
     @IsOptional()
     ministerio?: User['ministerio'] = [];
 

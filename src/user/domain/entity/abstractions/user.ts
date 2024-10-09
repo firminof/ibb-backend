@@ -65,7 +65,7 @@ export interface User {
     filhos: IUser[];
     status: StatusEnum;
     diacono: IUser;
-    ministerio: number[];
+    ministerio: string[];
     endereco?: UserAddress;
 
     data_ingresso?: Date | null;
