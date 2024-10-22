@@ -258,6 +258,8 @@ export class UserService {
             Logger.log(`> [Service][User][PUT][update] finished`);
         } catch (e) {
             Logger.log(`> [Service][User][PUT][update] catch - ${JSON.stringify(e)}`);
+            if (e['message'].includes('E11000 duplicate key error collection'))
+                throw new BadRequestException('Houve uma falha ao atualizar o membro, tente novamente.');
             throw new BadRequestException(e['message']);
         }
     }
