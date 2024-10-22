@@ -22,6 +22,7 @@ export class MinistrieController {
         isArray: true
     })
     async getAll(): Promise<MinistrieEntity[]> {
+        Logger.log(``);
         Logger.log(`> [Controller][Ministrie][GET][getAll] - init`);
         return this.ministrieService.getAll();
     }
@@ -30,6 +31,7 @@ export class MinistrieController {
     @HttpCode(HttpStatus.CREATED)
     @ApiResponse({status: HttpStatus.CREATED})
     async create(@Body() data: CreateMinistrieDto) {
+        Logger.log(``);
         Logger.log(`> [Controller][Ministrie][POST][Create] - init`);
         return this.ministrieService.create(data);
     }
@@ -38,6 +40,7 @@ export class MinistrieController {
     @HttpCode(HttpStatus.OK)
     @ApiResponse({status: HttpStatus.NO_CONTENT})
     async update(@Param('id') id: string, @Body() data: UpdateMinistrieDto) {
+        Logger.log(``);
         Logger.log(`> [Controller][Ministrie][PUT][Update] - init`);
         return this.ministrieService.update(id, data);
     }
@@ -46,6 +49,7 @@ export class MinistrieController {
     @HttpCode(HttpStatus.OK)
     @ApiResponse({status: HttpStatus.OK})
     async delete(@Param() params: DeleteMinistrieDto) {
+        Logger.log(``);
         Logger.log(`> [Controller][Ministrie][DELETE][Update] - init`);
         return this.ministrieService.delete(params);
     }

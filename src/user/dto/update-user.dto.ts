@@ -90,9 +90,8 @@ export class UpdateUserDto {
     @IsOptional()
     conjugue?: User['conjugue'];
 
-    @ApiPropertyOptional({ type: String, format: 'YYYY-MM-DD' })
+    @ApiPropertyOptional({ type: Date})
     @IsOptional()
-    @IsDateString()
     data_casamento?: User['data_casamento'];
 
     @ApiPropertyOptional({type: Boolean})
