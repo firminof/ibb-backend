@@ -7,6 +7,8 @@ import {formatNome} from "../../common/helpers/helpers";
 import {UserEntity} from "../../user/domain/entity/user.entity";
 import {SendEmailDto} from "../../user/dto/send-email.dto";
 import {EmailService} from "../../user/service/email.service";
+import {TwilioMessagingService} from "../../common/services/twilio-messaging.service";
+import {UserService} from "../../user/service/user.service";
 
 export interface UserInfo {
     mongoId: string;
@@ -66,17 +68,19 @@ export class AuthService {
 
             const passwordResetLink = await auth.generatePasswordResetLink(email);
 
+            this.eventEmitter.emit('user-service.forget-password.send', {
+                link: passwordResetLink,
+                email
+            })
+
             return await this.sendEmailResetEmail({
                 html: '',
                 text: 'Redefinir senha',
                 subject: 'Redefinir senha',
                 to: email,
-                requestName: 'IBB'
-            }, passwordResetLink)
-            // this.eventEmitter.emit('password-reset-link.generated', {
-            //   link: passwordResetLink,
-            //   email,
-            // });
+                requestName: 'IBB',
+                phone: ''
+            }, passwordResetLink);
 
         } catch (e) {
             if (e.message === 'INTERNAL ASSERT FAILED: Unable to create the email action link') {

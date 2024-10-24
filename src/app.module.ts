@@ -10,6 +10,7 @@ import {ScheduleModule} from "@nestjs/schedule";
 import {UserModule} from "./user/user.module";
 import {MinistrieModule} from "./ministrie/ministrie.module";
 import {AuthModule} from "./auth/auth.module";
+import {TwilioMessagingService} from "./common/services/twilio-messaging.service";
 
 @Module({
     imports: [

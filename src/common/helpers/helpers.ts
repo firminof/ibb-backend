@@ -147,3 +147,15 @@ export const formatListMember = (allMembers: UserEntity[]) => {
         return user;
     });
 }
+
+export const formatToInternationalStandard = (phone: string) => {
+    const includesCountryCode = phone.includes('+55');
+
+    if (includesCountryCode) {
+        return phone;
+    }
+
+    const treatedPhone = phone.replace(/\.|\-|([()])|\s|[+]/g, '');
+
+    return '+55' + treatedPhone;
+};

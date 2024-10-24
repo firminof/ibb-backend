@@ -1,4 +1,4 @@
-import {Injectable} from '@nestjs/common';
+import {Injectable, Logger} from '@nestjs/common';
 import * as sgMail from '@sendgrid/mail';
 import * as process from "process";
 
@@ -16,6 +16,9 @@ export class EmailService {
             text,
             html,
         };
+        Logger.log(`> [Service][Email] from: ${msg.from}`);
+        Logger.log(`> [Service][Email] to: ${msg.to}`);
+        Logger.log(`> [Service][Email] subject: ${msg.subject}`);
 
         try {
             const response = await sgMail.send(msg);

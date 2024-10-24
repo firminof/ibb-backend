@@ -9,11 +9,13 @@ import {IUserResponseApi} from "../dto/list-users.dto";
 import {SendEmailDto} from "../dto/send-email.dto";
 import {CreateUserInviteDto} from "../dto/create-user-invite.dto";
 import {UpdateInfoDto} from "../dto/update-info.dto";
+import {TwilioMessagingService} from "../../common/services/twilio-messaging.service";
+import {TwilioWhatsappInputDto} from "../../common/dto/twillio-whatsapp.dto";
 
 @Controller('v1/user')
 @ApiTags('User')
 export class UserController {
-    constructor(private userService: UserService) {}
+    constructor(private userService: UserService, private twilioMessagingService: TwilioMessagingService) {}
 
     @Get('all')
     @HttpCode(HttpStatus.OK)
@@ -52,6 +54,19 @@ export class UserController {
         Logger.log(``);
         Logger.log(`> [Controller][User][GET][getById] - init`);
         return this.userService.getById(id);
+    }
+
+    @Get('get-by-email/:email')
+    @HttpCode(HttpStatus.OK)
+    @ApiResponse({
+        status: HttpStatus.OK,
+        type: UserEntity,
+        isArray: true,
+    })
+    async getByEmail(@Param('email') email: string): Promise<IUserResponseApi> {
+        Logger.log(``);
+        Logger.log(`> [Controller][User][GET][getByEmail] - init`);
+        return this.userService.findByEmail(email);
     }
 
     @Post()
@@ -110,6 +125,16 @@ export class UserController {
         Logger.log(`> [Controller][User][POST][registrationUpdate] data - ${data}`);
 
         return this.userService.registrationUpdate(data);
+    }
+
+    @Post('/whatsapp/send-message')
+    @HttpCode(HttpStatus.OK)
+    @ApiResponse({status: HttpStatus.OK})
+    async sendWhatsappMessage(@Body() data: TwilioWhatsappInputDto) {
+        Logger.log(``);
+        Logger.log(`> [Controller][User][POST][sendWhatsappMessage] - init`);
+        Logger.log(`> [Controller][User][POST][sendWhatsappMessage] data - ${JSON.stringify(data)}`);
+        return this.twilioMessagingService.sendWhatsappMessageWithTwilio(data);
     }
 }
 

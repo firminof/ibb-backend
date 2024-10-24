@@ -6,6 +6,7 @@ import {UserService} from "./service/user.service";
 import {CreateUserValidation} from "./service/create-user-validation";
 import {EmailService} from "./service/email.service";
 import {AuthService} from "../auth/services/auth.service";
+import {TwilioMessagingService} from "../common/services/twilio-messaging.service";
 
 @Module({
     imports: [
@@ -17,7 +18,8 @@ import {AuthService} from "../auth/services/auth.service";
         UserRepository,
         CreateUserValidation,
         EmailService,
-        AuthService
+        AuthService,
+        TwilioMessagingService,
     ],
     exports: [UserService, TypeOrmModule, UserRepository]
 })

@@ -8,18 +8,22 @@ export class SendEmailDto {
     requestName: string;
 
     @ApiProperty({type: String})
-    @IsEmail()
+    @IsOptional()
     to: string;
 
     @ApiProperty({type: String})
-    @IsNotEmpty()
+    @IsOptional()
     subject: string;
 
     @ApiProperty({type: String})
-    @IsNotEmpty()
+    @IsOptional()
     text: string;
 
     @ApiProperty({type: String})
-    @IsEmpty()
+    @IsOptional()
     html: string;
+
+    @ApiProperty({type: String})
+    @IsOptional()
+    phone: string;
 }

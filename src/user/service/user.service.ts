@@ -15,6 +15,7 @@ import {formatPhoneNumber} from "../../common/validations/telefone";
 import {AuthService} from "../../auth/services/auth.service";
 import {Providers} from "../domain/entity/abstractions/user";
 import * as process from "process";
+import {EventEmitter2, OnEvent} from "@nestjs/event-emitter";
 
 @Injectable()
 export class UserService {
@@ -22,7 +23,8 @@ export class UserService {
         private userRepository: UserRepository,
         private createUserValidation: CreateUserValidation,
         private emailService: EmailService,
-        private authService: AuthService
+        private authService: AuthService,
+        private eventEmitter: EventEmitter2
     ) {
     }
 
@@ -285,6 +287,14 @@ export class UserService {
     async sendInvite(data: SendEmailDto) {
         Logger.log(`> [Service][User][POST][sendInvite] - init`);
 
+        if (data.phone.length > 0) {
+            this.eventEmitter.emit('twillio-whatsapp.send-invite.send', {
+                email: data.to,
+                numeroWhatsapp: data.phone
+            })
+            return 'Convite enviado por WhatsApp!'
+        }
+
         if (!data) {
             throw new NotFoundException('Configuração do email não informada!');
         }
@@ -377,7 +387,7 @@ export class UserService {
     <p>Estamos felizes em convidá-lo(a) para se juntar à <b>Igreja Batista do Brooklin (IBB)</b>.</p>
 
     <p>Clique no link abaixo para aceitar o convite e completar seu cadastro.</p>
-    <a href="${process.env.APPLICATION_URL}/invite?email=${data.to}" class="button">Aceitar Convite e atualizar dados</a>
+    <a href="${process.env.APPLICATION_URL_PROD}/invite?email=${data.to}" class="button">Aceitar Convite e atualizar dados</a>
     <br/>
     <br/>
   </div>
@@ -408,11 +418,33 @@ export class UserService {
         }
     }
 
-    async findByEmail(email: string) {
+    async findByEmail(email: string): Promise<IUserResponseApi> {
         try {
             return await this.userRepository.findByEmail(email);
         } catch (e) {
             throw new BadRequestException(e.message);
+        }
+    }
+
+    @OnEvent('user-service.forget-password.send')
+    async forgetPassword(data: {link: string, email: string}) {
+        Logger.log(`> [Service][User][forgetPassword] init`);
+        Logger.log(`> [Service][User][forgetPassword] - email: ${data.email}`);
+        try {
+            const user: UserEntity = await this.userRepository.findByEmail(data.email);
+            Logger.log(`> [Service][User][forgetPassword][findByEmail] - ${JSON.stringify(user)}`);
+
+            if (!user) {
+                throw new NotFoundException('Membro não encontrado!');
+            }
+
+            this.eventEmitter.emit('twillio-whatsapp.forget-password.send', {
+                link: data.link,
+                numeroWhatsapp: user.telefone
+            })
+        } catch (e) {
+            Logger.log(`> [Service][User][forgetPassword] catch - ${JSON.stringify(e)}`);
+            throw new BadRequestException(e['message']);
         }
     }
 }
