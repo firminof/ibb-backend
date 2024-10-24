@@ -287,7 +287,7 @@ export class UserService {
     async sendInvite(data: SendEmailDto) {
         Logger.log(`> [Service][User][POST][sendInvite] - init`);
 
-        if (data.phone.length > 0) {
+        if (data.phone.length > 0 && data.phone !== 'string') {
             this.eventEmitter.emit('twillio-whatsapp.send-invite.send', {
                 email: data.to,
                 numeroWhatsapp: data.phone
