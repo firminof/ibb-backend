@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import {Logger, ValidationPipe} from '@nestjs/common';
 import * as bodyParser from 'body-parser';
 import * as dotenv from 'dotenv';
+import * as process from "process";
 
 dotenv.config();
 
@@ -11,7 +12,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe());
 
-  const port = process.env.PORT || 80;
+  const port = process.env.PORT || 3001;
   const appPrefix = 'v1';
   const swaggerPrefix = 'api';
 
