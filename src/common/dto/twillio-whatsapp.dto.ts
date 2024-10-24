@@ -1,14 +1,6 @@
 import {ApiProperty} from "@nestjs/swagger";
 import {Type} from "class-transformer";
 
-export interface WhatsappMessageWithTwilioInput {
-    linkAplicacao: string;
-    numeroWhatsapp: string;
-    nomeMembro: string;
-    nomeCompanhia: string;
-    conteudoMensagem: string;
-}
-
 export enum WhatsappMessageStatus {
     'SENT' = 'SENT',
     'FAILED' = 'FAILED',
