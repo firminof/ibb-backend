@@ -8,7 +8,7 @@ dotenv.config();
 export const ORMConfig: MongoConnectionOptions = {
   type: 'mongodb',
   entities: [UserEntity, MinistrieEntity],
-  url: process.env.DB_URL,
+  url: 'mongodb+srv://filipefirmino:P22J9JoyBsyMrc6M@ibbclustermongodb.meo2m.mongodb.net/?retryWrites=true&w=majority&appName=IbbClusterMongoDb',
   useUnifiedTopology: true,
   logging: true,
   synchronize: true,

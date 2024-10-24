@@ -9,9 +9,9 @@ import {MessageInstance} from "twilio/lib/rest/api/v2010/account/message";
 
 dotenv.config();
 
-const accountSid = process.env.TWILIO_SID;
-const authToken = process.env.TWILIO_TOKEN;
-const sender = process.env.TWILIO_SENDER;
+const accountSid = 'AC37a819fea18afc89b6566d23ae33699b';
+const authToken = 'a29c0fdaf26618e2df93d72ff2e9f3e4';
+const sender = '+5511984252000';
 
 const client = new Twilio(accountSid, authToken);
 
