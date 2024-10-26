@@ -147,91 +147,53 @@ export class AuthService {
         Logger.log(`> [Service][Auth][sendEmailResetEmail] - init`);
         Logger.log(`> [Service][Auth][sendEmailResetEmail] data - ${JSON.stringify(data)}`);
 
-        data.html = `
-<!DOCTYPE html>
+        data.html =
+            `
+            <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Redefinir senha Igreja Batista do Brooklin (IBB)</title>
-  <style>
-      body {
-          font-family: Arial, sans-serif;
-          background-color: #f4f4f4;
-          margin: 0;
-          padding: 0;
-      }
-
-      .container {
-          max-width: 700px;
-          margin: 0 auto;
-          background-color: #ffffff;
-          padding: 20px;
-          border-radius: 8px;
-          box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      }
-
-      .header {
-          text-align: center;
-          background-color: #333333;
-          color: #ffffff;
-          padding: 20px;
-          border-radius: 8px 8px 0 0;
-      }
-
-      .content {
-          margin: 20px 0;
-          text-align: center;
-      }
-
-      .content h1 {
-          color: #333333;
-      }
-
-      .content p {
-          font-size: 16px;
-          color: #666666;
-      }
-
-      .button {
-          display: inline-block;
-          padding: 10px 20px;
-          background-color: #4CAF50;
-          color: #ffffff !important;
-          text-decoration: none;
-          border-radius: 5px;
-          margin-top: 20px;
-          font-size: 16px;
-          font-weight: 700;
-      }
-
-      .footer {
-          text-align: center;
-          margin-top: 20px;
-          font-size: 12px;
-          color: #999999;
-      }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redefinir senha</title>
 </head>
-<body>
-<div class="container">
-  <div class="header">
-    <h1>Redefinir senha Igreja Batista do Brooklin (IBB)</h1>
-  </div>
-  <div class="content">
-    <p>Clique no link abaixo para mudar a senha.</p>
-    <a href="${link}" class="button">Mudar senha</a>
-    <br/>
-    <br/>
-  </div>
-  <div class="footer">
-    <p>Se você não solicitou este convite, pode ignorar este email.</p>
-    <p>&copy; 2024 Igreja Batista do Brooklin (IBB). Todos os direitos reservados.</p>
-  </div>
-</div>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center" style="background-color: #f8f8f8; padding: 20px;">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; padding: 20px; border-radius: 10px;">
+                    <tr>
+                        <td align="center">
+                            <h1 style="color: #333333;">Redefinir senha!</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center">
+                            <img src="http://cdn.mcauto-images-production.sendgrid.net/9b153d64518b45c6/8ec43570-853b-496f-9111-76bc28cdae49/1600x673.jpeg" alt="Imagem de Boas-Vindas" style="max-width: 100%; height: auto; border-radius: 10px;">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 20px; text-align: left;">     
+                            <p> Clique no botão abaixo para mudar a senha.</p>
+                            <p style="text-align: center;">
+                                <a href="${link}" style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Mudar Senha</a>
+                            </p>
+                            <p>Se você tiver alguma dúvida, sinta-se à vontade para entrar em contato conosco.</p>
+                            <p>Atenciosamente,</p>
+                            <p><strong>Igreja Batista do Brooklin</strong></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" style="padding: 20px; font-size: 12px; color: #666;">
+                            <p>Se você não solicitou esta mudança, por favor, ignore este e-mail.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
-`;
+            `;
         try {
             const sendEmailBySendGrid = await this.emailService.sendEmail(data.to, data.subject, data.text, data.html);
 

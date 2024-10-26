@@ -7,6 +7,7 @@ import {UpdateUserDto} from "../../user/dto/update-user.dto";
 import {DeleteUserDto} from "../../user/dto/delete-user.dto";
 import {DeleteMinistrieDto} from "../dto/delete-ministrie.dto";
 import {UpdateMinistrieDto} from "../dto/update-ministrie.dto";
+import {IListMinistriesDto} from "../dto/list-ministries.dto";
 
 @Controller('v1/ministrie')
 @ApiTags('Ministrie')
@@ -18,10 +19,8 @@ export class MinistrieController {
     @HttpCode(HttpStatus.OK)
     @ApiResponse({
         status: HttpStatus.OK,
-        type: MinistrieEntity,
-        isArray: true
     })
-    async getAll(): Promise<MinistrieEntity[]> {
+    async getAll(): Promise<IListMinistriesDto[]> {
         Logger.log(``);
         Logger.log(`> [Controller][Ministrie][GET][getAll] - init`);
         return this.ministrieService.getAll();

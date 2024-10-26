@@ -11,12 +11,15 @@ export class EmailService {
     async sendEmail(to: string, subject: string, text: string, html: string): Promise<any> {
         const msg = {
             to,
-            from: process.env.SENDGRID_API_FROM, // Use um email verificado no SendGrid
+            from: {
+                email: process.env.SENDGRID_API_FROM, // Use um email verificado no SendGrid
+                name: 'Secretaria IBB'
+            },
             subject,
             text,
             html,
         };
-        Logger.log(`> [Service][Email] from: ${msg.from}`);
+        Logger.log(`> [Service][Email] from: ${msg.from.email}`);
         Logger.log(`> [Service][Email] to: ${msg.to}`);
         Logger.log(`> [Service][Email] subject: ${msg.subject}`);
 

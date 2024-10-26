@@ -142,7 +142,7 @@ export class UserService {
                 name: saved.nome,
                 email: saved.email,
                 role: saved.role,
-                phoneNumber ,
+                phoneNumber,
             };
 
             if (saved) {
@@ -311,94 +311,63 @@ export class UserService {
             throw new NotFoundException('Texto não informado!');
         }
 
-        data.html = `
-<!DOCTYPE html>
+        const linkConvite = `${process.env.APPLICATION_URL_PROD}/invite?email=${data.to}`;
+
+        data.html =
+            `
+            <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Convite para Igreja Batista do Brooklin (IBB)</title>
-  <style>
-      body {
-          font-family: Arial, sans-serif;
-          background-color: #f4f4f4;
-          margin: 0;
-          padding: 0;
-      }
-
-      .container {
-          max-width: 700px;
-          margin: 0 auto;
-          background-color: #ffffff;
-          padding: 20px;
-          border-radius: 8px;
-          box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      }
-
-      .header {
-          text-align: center;
-          background-color: #333333;
-          color: #ffffff;
-          padding: 20px;
-          border-radius: 8px 8px 0 0;
-      }
-
-      .content {
-          margin: 20px 0;
-          text-align: center;
-      }
-
-      .content h1 {
-          color: #333333;
-      }
-
-      .content p {
-          font-size: 16px;
-          color: #666666;
-      }
-
-      .button {
-          display: inline-block;
-          padding: 10px 20px;
-          background-color: #4CAF50;
-          color: #ffffff !important;
-          text-decoration: none;
-          border-radius: 5px;
-          margin-top: 20px;
-          font-size: 16px;
-          font-weight: 700;
-      }
-
-      .footer {
-          text-align: center;
-          margin-top: 20px;
-          font-size: 12px;
-          color: #999999;
-      }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convite de Membresia</title>
 </head>
-<body>
-<div class="container">
-  <div class="header">
-    <h1>Seja membro da Igreja Batista do Brooklin (IBB)</h1>
-  </div>
-  <div class="content">
-    <h1>${data.requestName && data.requestName.length > 0 ? this.createUserValidation.capitalizeFirstLetter(data.requestName) + ' convidou você!' : 'Você foi convidado!'}</h1>
-    <p>Estamos felizes em convidá-lo(a) para se juntar à <b>Igreja Batista do Brooklin (IBB)</b>.</p>
-
-    <p>Clique no link abaixo para aceitar o convite e completar seu cadastro.</p>
-    <a href="${process.env.APPLICATION_URL_PROD}/invite?email=${data.to}" class="button">Aceitar Convite e atualizar dados</a>
-    <br/>
-    <br/>
-  </div>
-  <div class="footer">
-    <p>Se você não solicitou este convite, pode ignorar este email.</p>
-    <p>&copy; 2024 Igreja Batista do Brooklin (IBB). Todos os direitos reservados.</p>
-  </div>
-</div>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center" style="background-color: #f8f8f8; padding: 20px;">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; padding: 20px; border-radius: 10px;">
+                    <tr>
+                        <td align="center">
+                            <h1 style="color: #333333;">🎉 Convite Especial!</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center">
+                            <img src="http://cdn.mcauto-images-production.sendgrid.net/9b153d64518b45c6/8ec43570-853b-496f-9111-76bc28cdae49/1600x673.jpeg" alt="Imagem de Boas-Vindas" style="max-width: 100%; height: auto; border-radius: 10px;">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 20px; text-align: left;">
+                        
+                            <p>Temos o prazer de convidá-lo(a) para fazer parte da nossa comunidade! É com grande entusiasmo que oferecemos a você a oportunidade de se tornar um membro e se juntar a nós em nossa jornada.</p>
+                            <h3>Por que se juntar a nós?</h3>
+                            <ul>
+                                <li>Acesso exclusivo a eventos especiais</li>
+                                <li>Conteúdo único para membros</li>
+                            </ul>
+                            <p>Estamos ansiosos para vê-lo(a) se juntar a nós e fazer parte de algo verdadeiramente especial.</p>
+                            <p> Clique no botão abaixo para aceitar nosso convite e iniciar sua jornada conosco!</p>
+                            <p style="text-align: center;">
+                                <a href="${linkConvite}" style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Aceitar Convite</a>
+                            </p>
+                            <p>Se você tiver alguma dúvida, sinta-se à vontade para entrar em contato conosco.</p>
+                            <p>Atenciosamente,</p>
+                            <p><strong>Igreja Batista do Brooklin</strong></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" style="padding: 20px; font-size: 12px; color: #666;">
+                            <p>Se você não solicitou este convite, por favor, ignore este e-mail.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
-`;
+            `;
         // {
         //     "to": "filipefirminof@hotmail.com",
         //     "subject": "Convite IBB",
@@ -427,7 +396,7 @@ export class UserService {
     }
 
     @OnEvent('user-service.forget-password.send')
-    async forgetPassword(data: {link: string, email: string}) {
+    async forgetPassword(data: { link: string, email: string }) {
         Logger.log(`> [Service][User][forgetPassword] init`);
         Logger.log(`> [Service][User][forgetPassword] - email: ${data.email}`);
         try {
@@ -448,30 +417,3 @@ export class UserService {
         }
     }
 }
-
-
-// const { MongoClient, ServerApiVersion } = require('mongodb');
-// const uri = "mongodb+srv://filipefirmino:P22J9JoyBsyMrc6M@ibbclustermongodb.meo2m.mongodb.net/?retryWrites=true&w=majority&appName=IbbClusterMongoDb";
-//
-// // Create a MongoClient with a MongoClientOptions object to set the Stable API version
-// const client = new MongoClient(uri, {
-//     serverApi: {
-//         version: ServerApiVersion.v1,
-//         strict: true,
-//         deprecationErrors: true,
-//     }
-// });
-//
-// async function run() {
-//     try {
-//         // Connect the client to the server	(optional starting in v4.7)
-//         await client.connect();
-//         // Send a ping to confirm a successful connection
-//         await client.db("admin").command({ ping: 1 });
-//         console.log("Pinged your deployment. You successfully connected to MongoDB!");
-//     } finally {
-//         // Ensures that the client will close when you finish/error
-//         await client.close();
-//     }
-// }
-// run().catch(console.dir);

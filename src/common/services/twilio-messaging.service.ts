@@ -26,6 +26,15 @@ export class TwilioMessagingService {
         let tentativas: number = 0;
 
         try {
+            /*
+            *Mensagem enviada pela Igreja Batista Do Brooklin.*
+
+{{1}},
+
+{{2}}
+
+_Esta mensagem foi enviada automaticamente, não responda._
+             */
             const treatedRecipient = formatToInternationalStandard(
                 input.numeroWhatsapp,
             );
@@ -78,13 +87,19 @@ export class TwilioMessagingService {
     }
 
     @OnEvent('twillio-whatsapp.forget-password.send')
-    async sendWhatsappMessageForgetPasswordWithTwilio(data: {link: string, numeroWhatsapp: string}) {
-        let tentativas: number = 0;
-
+    async sendWhatsappMessageForgetPasswordWithTwilio(data: { link: string, numeroWhatsapp: string }) {
         try {
             const treatedRecipient: string = formatToInternationalStandard(
                 data.numeroWhatsapp
             );
+
+            /*
+            *Redefinir senha*
+
+Clique no link abaixo para mudar a senha.
+
+{{1}}
+             */
 
             Logger.log(``);
             Logger.log(`> [Service][Twillio][WhatsApp][ForgetPassword] para: ${treatedRecipient}`);
@@ -94,7 +109,7 @@ export class TwilioMessagingService {
                 messagingServiceSid: process.env.TWILIO_MESSAGE_SERVICE_SID,
                 from: `whatsapp:${sender}`,
                 contentVariables: JSON.stringify({
-                    1: data.link
+                    1: data.link.toString()
                 }),
                 to: `whatsapp:${treatedRecipient}`,
                 attempt: 3
@@ -108,19 +123,7 @@ export class TwilioMessagingService {
             const checkMessage: MessageInstance = await client.messages(message.sid).fetch();
 
             whatsAppStatusMessage = WhatsappMessageStatus[checkMessage.status.toUpperCase()];
-            Logger.log('[Service][Twillio][WhatsApp][ForgetPassword] - messageStatus: ', whatsAppStatusMessage);
-
-            if (tentativas <= 8 && whatsAppStatusMessage.toString().includes('UNDELIVERED')) {
-                Logger.log('[Service][Twillio][WhatsApp][ForgetPassword] - reenviar mensagem');
-                tentativas += 1;
-                setTimeout(() => this.sendWhatsappMessageForgetPasswordWithTwilio(data), 25000);
-                if (tentativas > 8) {
-                    throw new BadRequestException(
-                        `Mensagem não entregue!`,
-                    );
-                    return;
-                }
-            }
+            Logger.log('[Service][Twillio][WhatsApp][ForgetPassword] - messageStatus: ', JSON.stringify(whatsAppStatusMessage));
 
             return whatsAppStatusMessage;
 
@@ -133,10 +136,19 @@ export class TwilioMessagingService {
     }
 
     @OnEvent('twillio-whatsapp.send-invite.send')
-    async sendWhatsappMessageSendInviteWithTwilio(data: {numeroWhatsapp: string}) {
-        let tentativas = 0;
-
+    async sendWhatsappMessageSendInviteWithTwilio(data: { numeroWhatsapp: string }) {
         try {
+            /*
+            *Você foi convidado para ser membro da Igreja Batista do Brooklin*
+
+Estamos felizes em convidá-lo(a) para se juntar a nós.
+
+Clique no link abaixo para aceitar o convite e completar seu cadastro.
+
+{{1}}
+
+_Se você não solicitou este convite, pode ignorar esta mensagem._
+             */
             const treatedRecipient: string = formatToInternationalStandard(
                 data.numeroWhatsapp
             );
@@ -145,9 +157,10 @@ export class TwilioMessagingService {
             const treatedPhone = data.numeroWhatsapp.replace(/\.|\-|([()])|\s|[+]/g, '');
 
             if (process.env.APPLICATION_URL_PROD) {
+                Logger.log(`> [Service][Twillio][WhatsApp][SendInvite] URL PROD: ${process.env.APPLICATION_URL_PROD}`);
                 url = `${process.env.APPLICATION_URL_PROD}/invite?telefone=${treatedPhone}`;
             } else {
-                url = `http://20.44.105.118/invite?telefone=${treatedPhone}`;
+                url = `https://app.ibbrooklin.org.br/invite?telefone=${treatedPhone}`;
             }
 
             Logger.log(``);
@@ -159,7 +172,7 @@ export class TwilioMessagingService {
                 messagingServiceSid: process.env.TWILIO_MESSAGE_SERVICE_SID,
                 from: `whatsapp:${sender}`,
                 contentVariables: JSON.stringify({
-                    1: url
+                    1: url.toString()
                 }),
                 to: `whatsapp:${treatedRecipient}`,
                 attempt: 3
@@ -173,20 +186,7 @@ export class TwilioMessagingService {
             const checkMessage: MessageInstance = await client.messages(message.sid).fetch();
 
             whatsAppStatusMessage = WhatsappMessageStatus[checkMessage.status.toUpperCase()];
-            Logger.log('[Service][Twillio][WhatsApp][SendInvite] - messageStatus: ', whatsAppStatusMessage);
-
-            if (tentativas <= 8 && whatsAppStatusMessage.toString().includes('UNDELIVERED')) {
-                Logger.log('[Service][Twillio][WhatsApp][SendInvite] - reenviar mensagem');
-                tentativas += 1;
-                setTimeout(() => this.sendWhatsappMessageSendInviteWithTwilio(data), 25000);
-
-                if (tentativas > 8) {
-                    throw new BadRequestException(
-                        `Mensagem não entregue!`,
-                    );
-                }
-                return;
-            }
+            Logger.log('[Service][Twillio][WhatsApp][SendInvite] - messageStatus: ', JSON.stringify(whatsAppStatusMessage));
 
             Logger.log('[Service][Twillio][WhatsApp][SendInvite] - finished');
             return whatsAppStatusMessage;

@@ -4,17 +4,30 @@ import {MinistrieRepository} from "../repository/ministrie.repository";
 import {CreateMinistrieDto} from "../dto/create-ministrie.dto";
 import {UpdateMinistrieDto} from "../dto/update-ministrie.dto";
 import {DeleteMinistrieDto} from "../dto/delete-ministrie.dto";
+import {IListMinistriesDto} from "../dto/list-ministries.dto";
+import {formatDataHoraPtbr} from "../../common/helpers/helpers";
 
 @Injectable()
 export class MinistrieService {
     constructor(private ministrieRepository: MinistrieRepository) {
     }
 
-    async getAll(): Promise<MinistrieEntity[]> {
+    async getAll(): Promise<IListMinistriesDto[]> {
         Logger.log(`> [Service][Ministrie][GET][getAll] - init`);
 
         try {
-            return await this.ministrieRepository.getAll();
+            const ministerios: MinistrieEntity[] = await this.ministrieRepository.getAll();
+
+            return ministerios.map((ministerio: MinistrieEntity):IListMinistriesDto => (
+                {
+                    _id: ministerio._id,
+                    nome: ministerio.nome,
+                    responsavel: ministerio.responsavel,
+                    categoria: ministerio.categoria,
+                    updatedAt: formatDataHoraPtbr(ministerio.updatedAt),
+                    createdAt: formatDataHoraPtbr(ministerio.createdAt),
+                }
+            ));
         } catch (e) {
             Logger.log(`> [Service][Ministrie][GET][getAll] catch - ${JSON.stringify(e)}`);
             // if (e['message'] == 'No metadata for "MinistrieEntity" was found.') {

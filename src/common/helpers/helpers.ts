@@ -39,7 +39,7 @@ export const formatDataPtbr = (data: any): string => {
     return ''
 }
 
-const formatDataHoraPtbr = (data_iso: Date): string => {
+export const formatDataHoraPtbr = (data_iso: Date): string => {
     const data_dia: string = `${data_iso.getDate() <= 9 ? '0' + data_iso.getDate() : data_iso.getDate()}`;
     const data_mes: string = `${(data_iso.getMonth() + 1 <= 9) ? '0' + (data_iso.getMonth() + 1) : data_iso.getMonth() + 1}`;
     const data_ano: string = `${data_iso.getFullYear()}`;
