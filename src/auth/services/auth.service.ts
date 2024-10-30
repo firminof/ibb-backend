@@ -113,18 +113,21 @@ export class AuthService {
     async findUserByEmail(email: string) {
         Logger.log(`> [Service][Auth][POST][findUserByEmail] - init`);
         const auth = admin.auth(firebaseApp);
+        let returnData;
 
         try {
-            return await auth.getUserByEmail(email);
+            returnData = await auth.getUserByEmail(email);
         } catch (error) {
             console.log(error);
             switch (error.errorInfo.code) {
                 case 'auth/user-not-found':
-                    return false;
+                    returnData = false;
                 default:
                     throw new BadRequestException(`Erro inesperado: ${error.errorInfo.message}`);
             }
         }
+
+        return returnData;
     }
 
     async findUserByUid(uid: string) {

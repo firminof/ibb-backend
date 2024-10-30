@@ -8,24 +8,28 @@ import {CreateUserInviteDto} from "../dto/create-user-invite.dto";
 export class CreateUserValidation {
     validate(createUserDto: CreateUserDto) {
         Logger.log(`> [Service][User][Post][validate] - init`);
-        if (!(createUserDto.role in UserRoles)) {
+        if (!(createUserDto && createUserDto.role in UserRoles)) {
             throw new BadRequestException('Regra de usuário inválida!');
         }
 
-        if (!(createUserDto.status in StatusEnum)) {
+        if (!(createUserDto && createUserDto.status in StatusEnum)) {
             throw new BadRequestException('Status inválido!');
         }
 
-        if (!(createUserDto.estado_civil in EstadoCivilEnum)) {
+        if (!(createUserDto && createUserDto.estado_civil in EstadoCivilEnum)) {
             throw new BadRequestException('Estado civil inválido!');
         }
 
-        if (createUserDto.cpf) {
+        if (createUserDto && createUserDto.cpf) {
             validateCPFLength(createUserDto.cpf);
         }
 
-        if (createUserDto.ministerio.length === 0) {
+        if (createUserDto && createUserDto.ministerio.length === 0) {
             createUserDto.ministerio = [];
+        }
+
+        if (createUserDto && createUserDto.filhos && createUserDto.filhos.length === 0) {
+            createUserDto.filhos = [];
         }
 
         return createUserDto;
@@ -33,24 +37,28 @@ export class CreateUserValidation {
 
     validateInvite(createUserInviteDto: CreateUserInviteDto) {
         Logger.log(`> [Service][User][Post][validateInvite] - init`);
-        if (!(createUserInviteDto.role in UserRoles)) {
+        if (!(createUserInviteDto && createUserInviteDto.role in UserRoles)) {
             throw new BadRequestException('Regra de usuário inválida!');
         }
 
-        if (!(createUserInviteDto.status in StatusEnum)) {
+        if (!(createUserInviteDto && createUserInviteDto.status in StatusEnum)) {
             throw new BadRequestException('Status inválido!');
         }
 
-        if (!(createUserInviteDto.estado_civil in EstadoCivilEnum)) {
+        if (!(createUserInviteDto && createUserInviteDto.estado_civil in EstadoCivilEnum)) {
             throw new BadRequestException('Estado civil inválido!');
         }
 
-        if (createUserInviteDto.cpf) {
+        if (createUserInviteDto && createUserInviteDto.cpf) {
             validateCPFLength(createUserInviteDto.cpf);
         }
 
-        if (createUserInviteDto.ministerio.length === 0) {
+        if (createUserInviteDto && createUserInviteDto.ministerio.length === 0) {
             createUserInviteDto.ministerio = [];
+        }
+
+        if (createUserInviteDto && createUserInviteDto.filhos && createUserInviteDto.filhos.length === 0) {
+            createUserInviteDto.filhos = [];
         }
 
         return createUserInviteDto;

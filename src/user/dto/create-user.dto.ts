@@ -11,6 +11,10 @@ export class UserDto {
     @ApiProperty({type: String})
     @Type(() => String)
     nome: string;
+
+    @ApiProperty({type: Boolean})
+    @Type(() => Boolean)
+    is_membro: boolean;
 }
 
 export class UserAddressDto {
@@ -94,7 +98,7 @@ export class CreateUserDto {
     @IsOptional()
     data_casamento: User['data_casamento'];
 
-    @ApiProperty({type: Boolean})
+    @ApiProperty({type: [UserDto]})
     @IsNotEmpty()
     possui_filhos: User['possui_filhos'];
 
@@ -157,4 +161,8 @@ export class CreateUserDto {
     @ApiProperty({ type: String })
     @IsOptional()
     motivo_visita: User['motivo_visita']
+
+    @ApiProperty({type: Boolean})
+    @IsNotEmpty()
+    is_diacono: User['is_diacono'];
 }

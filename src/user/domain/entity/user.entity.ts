@@ -88,40 +88,44 @@ export class UserEntity implements User {
 
     @Column()
     @ApiPropertyOptional({type: Date})
-    data_ingresso: Date;
+    data_ingresso: User['data_ingresso']
 
     @Column()
     @ApiProperty({type: String})
-    forma_ingresso: string;
+    forma_ingresso: User['forma_ingresso']
 
     @Column()
     @ApiProperty({type: String})
-    local_ingresso: string;
+    local_ingresso: User['local_ingresso']
 
     @Column()
     @ApiProperty({type: String})
-    motivo_transferencia: string;
+    motivo_transferencia: User['motivo_transferencia']
 
     @Column()
     @ApiPropertyOptional({type: Date})
-    falecimento: Date;
+    falecimento: User['falecimento']
 
     @Column()
     @ApiProperty({type: String})
-    motivo_falecimento: string;
+    motivo_falecimento: User['motivo_falecimento']
 
     @Column()
     @ApiPropertyOptional({type: Date})
-    excluido: Date;
+    excluido: User['excluido']
 
     @Column()
     @ApiProperty({type: String})
-    motivo_exclusao: string;
+    motivo_exclusao: User['motivo_exclusao']
 
     @Column()
     @ApiProperty({type: String})
-    motivo_visita: string;
+    motivo_visita: User['motivo_visita']
 
     @Column()
     providersInfo: User['providersInfo'] = [];
+
+    @Column()
+    @ApiProperty({type: Boolean})
+    is_diacono: User['is_diacono'];
 }

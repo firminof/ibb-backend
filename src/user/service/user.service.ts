@@ -99,78 +99,90 @@ export class UserService {
                 throw new BadRequestException('Email já em uso no Firebase!');
             }
 
-            const validatedInput: CreateUserDto = this.createUserValidation.validate(data);
+            return await this.createUserUniversal(data);
 
-            const newUser: UserEntity = {
-                conjugue: validatedInput.conjugue,
-                cpf: validatedInput.cpf,
-                data_casamento: validatedInput.data_casamento,
-                data_nascimento: validatedInput.data_nascimento,
-                diacono: validatedInput.diacono,
-                email: validatedInput.email,
-                endereco: validatedInput.endereco,
-                estado_civil: validatedInput.estado_civil,
-                filhos: validatedInput.filhos,
-                foto: validatedInput.foto,
-                ministerio: validatedInput.ministerio,
-                nome: validatedInput.nome,
-                possui_filhos: validatedInput.possui_filhos,
-                rg: validatedInput.rg,
-                role: validatedInput.role,
-                status: validatedInput.status,
-                telefone: validatedInput.telefone,
-                transferencia: validatedInput.transferencia,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                data_ingresso: validatedInput.data_ingresso,
-                excluido: validatedInput.excluido,
-                falecimento: validatedInput.falecimento,
-                forma_ingresso: validatedInput.forma_ingresso,
-                local_ingresso: validatedInput.local_ingresso,
-                motivo_exclusao: validatedInput.motivo_exclusao,
-                motivo_falecimento: validatedInput.motivo_falecimento,
-                motivo_transferencia: validatedInput.motivo_transferencia,
-                motivo_visita: validatedInput.motivo_visita,
-                providersInfo: []
-            }
-
-            const saved = await this.userRepository.save(newUser);
-            const phoneNumber = formatPhoneNumber(saved.telefone);
-
-            const savedFirebase = {
-                mongoId: saved._id,
-                name: saved.nome,
-                email: saved.email,
-                role: saved.role,
-                phoneNumber,
-            };
-
-            if (saved) {
-                try {
-                    const userFirebase = await this.authService.registerUser(savedFirebase);
-
-                    await this.update(saved._id, {
-                        providersInfo: [{
-                            providerId: Providers.password,
-                            uid: userFirebase.uid
-                        }]
-                    })
-                } catch (e) {
-                    await this.userRepository.delete(saved._id);
-                    throw new BadRequestException(
-                        `Error while creating user in Firebase - ${e.message}`,
-                    );
-                }
-            }
-
-            Logger.log(`> [Service][User][POST][Create] saved - ${JSON.stringify(saved)}`);
-            Logger.log(`> [Service][User][POST][Create] savedFirebase - ${JSON.stringify(savedFirebase)}`);
-            Logger.log(`> [Service][User][POST][Create] - finished`);
-            return saved;
         } catch (e) {
             Logger.log(`> [Service][User][POST][Create] catch - ${JSON.stringify(e)}`);
+            Logger.log(`> [Service][User][POST][Create] catch message - ${e['response']['message']}`);
+            if (e['response']['message'].toString().includes('There is no user record corresponding to the provided identifier')) {
+                return await this.createUserUniversal(data);
+            }
             throw new BadRequestException(e['message']);
         }
+    }
+
+    async createUserUniversal(data: CreateUserDto) {
+        const validatedInput: CreateUserDto = this.createUserValidation.validate(data);
+
+        const newUser: UserEntity = {
+            conjugue: validatedInput.conjugue,
+            cpf: validatedInput.cpf,
+            data_casamento: validatedInput.data_casamento,
+            data_nascimento: validatedInput.data_nascimento,
+            diacono: validatedInput.diacono,
+            email: validatedInput.email,
+            endereco: validatedInput.endereco,
+            estado_civil: validatedInput.estado_civil,
+            filhos: validatedInput.filhos,
+            foto: validatedInput.foto,
+            ministerio: validatedInput.ministerio,
+            nome: validatedInput.nome,
+            possui_filhos: validatedInput.possui_filhos,
+            rg: validatedInput.rg,
+            role: validatedInput.role,
+            status: validatedInput.status,
+            telefone: validatedInput.telefone,
+            transferencia: validatedInput.transferencia,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            data_ingresso: validatedInput.data_ingresso,
+            excluido: validatedInput.excluido,
+            falecimento: validatedInput.falecimento,
+            forma_ingresso: validatedInput.forma_ingresso,
+            local_ingresso: validatedInput.local_ingresso,
+            motivo_exclusao: validatedInput.motivo_exclusao,
+            motivo_falecimento: validatedInput.motivo_falecimento,
+            motivo_transferencia: validatedInput.motivo_transferencia,
+            motivo_visita: validatedInput.motivo_visita,
+            providersInfo: [],
+            is_diacono: validatedInput.is_diacono
+        }
+
+        const saved = await this.userRepository.save(newUser);
+        const phoneNumber = formatPhoneNumber(saved.telefone);
+
+        const savedFirebase = {
+            mongoId: saved._id,
+            name: saved.nome,
+            email: saved.email,
+            role: saved.role,
+            phoneNumber,
+        };
+
+        if (saved) {
+            try {
+                const userFirebase = await this.authService.registerUser(savedFirebase);
+
+                await this.update(saved._id, {
+                    providersInfo: [{
+                        providerId: Providers.password,
+                        uid: userFirebase.uid
+                    }]
+                })
+            } catch (e) {
+                await this.userRepository.delete(saved._id);
+                throw new BadRequestException(
+                    `Error while creating user in Firebase - ${e.message}`,
+                );
+            }
+        }
+
+        Logger.log(`> [Service][User][POST][Create] saved - ${JSON.stringify(saved)}`);
+        Logger.log(`> [Service][User][POST][Create] savedFirebase - ${JSON.stringify(savedFirebase)}`);
+        Logger.log(`> [Service][User][POST][Create] - finished`);
+        return saved;
+
+        return saved;
     }
 
     async registrationUpdate(data: UpdateInfoDto) {
@@ -203,6 +215,7 @@ export class UserService {
                 diacono: {
                     id: 0,
                     nome: '',
+                    is_membro: false
                 },
                 email: validatedInput.email,
                 endereco: validatedInput.endereco,
@@ -228,8 +241,8 @@ export class UserService {
                 motivo_falecimento: null,
                 motivo_transferencia: null,
                 motivo_visita: null,
-                providersInfo: []
-
+                providersInfo: [],
+                is_diacono: validatedInput.is_diacono,
             }
 
             const saved = await this.userRepository.save(newUser);

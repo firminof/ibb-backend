@@ -160,4 +160,8 @@ export class UpdateUserDto {
 
     @IsOptional()
     providersInfo?: User['providersInfo']
+
+    @ApiProperty({type: Boolean})
+    @IsOptional()
+    is_diacono?: User['is_diacono'];
 }

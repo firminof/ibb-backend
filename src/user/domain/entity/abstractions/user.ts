@@ -46,6 +46,7 @@ export interface FirebaseProviderInfo {
 export interface IUser {
     id: number;
     nome: string;
+    is_membro: boolean;
 }
 
 export interface User {
@@ -84,4 +85,6 @@ export interface User {
     motivo_visita?: string | null;
 
     providersInfo: FirebaseProviderInfo[];
+
+    is_diacono: boolean;
 }

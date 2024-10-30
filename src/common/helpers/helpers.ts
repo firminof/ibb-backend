@@ -142,6 +142,7 @@ export const formatListMember = (allMembers: UserEntity[]) => {
             motivo_falecimento: member.motivo_falecimento,
             motivo_exclusao: member.motivo_exclusao,
             motivo_visita: member.motivo_visita,
+            is_diacono: member.is_diacono
         }
 
         return user;

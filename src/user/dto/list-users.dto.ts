@@ -39,4 +39,6 @@ export interface IUserResponseApi {
     motivo_exclusao?: string | null;
 
     motivo_visita?: string | null;
+
+    is_diacono: boolean;
 }

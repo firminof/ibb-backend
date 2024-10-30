@@ -111,4 +111,8 @@ export class CreateUserInviteDto {
     login: {
         password: string;
     }
+
+    @ApiProperty({type: Boolean})
+    @IsOptional()
+    is_diacono: User['is_diacono'];
 }
