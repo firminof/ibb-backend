@@ -5,6 +5,11 @@ export class SendEmailDto {
     @ApiProperty({type: String})
     @IsOptional()
     @IsString()
+    memberIdRequested: string;
+
+    @ApiProperty({type: String})
+    @IsOptional()
+    @IsString()
     requestName: string;
 
     @ApiProperty({type: String})

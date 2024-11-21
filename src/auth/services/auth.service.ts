@@ -9,6 +9,7 @@ import {SendEmailDto} from "../../user/dto/send-email.dto";
 import {EmailService} from "../../user/service/email.service";
 import {TwilioMessagingService} from "../../common/services/twilio-messaging.service";
 import {UserService} from "../../user/service/user.service";
+import {UserV2Entity} from "../../user-v2/domain/entity/user-v2.entity";
 
 export interface UserInfo {
     mongoId: string;
@@ -26,22 +27,29 @@ export class AuthService {
     ) {
     }
 
-    async registerUser(userInfo: UserInfo) {
+    async registerUser(userInfo: UserInfo, password?: string) {
         Logger.log(`> [Service][Auth][registerUser]] - init`);
         try {
             const auth = admin.auth(firebaseApp);
+            let randomPassword: string = '';
+            let emailVerified: boolean = false;
 
-            const randomPassword =
-                Math.random()           // Generate random number, eg: 0.123456
-                    .toString(36)  // Convert  to base-36 : "0.4fzyo82mvyr"
-                    .slice(-8);         // Cut off last 8 characters : "yo82mvyr";
+            if (!password) {
+                randomPassword =
+                    Math.random()           // Generate random number, eg: 0.123456
+                        .toString(36)  // Convert  to base-36 : "0.4fzyo82mvyr"
+                        .slice(-8);         // Cut off last 8 characters : "yo82mvyr";
+            } else {
+                randomPassword = password;
+                emailVerified = true;
+            }
 
             const userFirebase: CreateRequest = {
                 email: userInfo.email,
                 password: randomPassword,
-                phoneNumber: userInfo.phoneNumber && userInfo.phoneNumber.length > 0 ? userInfo.phoneNumber : '',
+                // phoneNumber: userInfo.phoneNumber && userInfo.phoneNumber.length > 0 ? userInfo.phoneNumber : '',
                 displayName: formatNome(userInfo.name),
-                emailVerified: false,
+                emailVerified,
             }
 
             const userRecord = await auth.createUser(userFirebase);
@@ -51,12 +59,15 @@ export class AuthService {
                 mongoId: userInfo.mongoId,
             });
 
-            const passwordResetLink = await auth.generatePasswordResetLink(
-                userInfo.email,
-            );
+            // const passwordResetLink = await auth.generatePasswordResetLink(
+            //     userInfo.email,
+            // );
 
             return userRecord;
         } catch (e) {
+            if (e.message.toString().includes('The user with the provided phone number already exists')) {
+                throw new BadRequestException('Número de telefone já cadastrado, tente com outro.');
+            }
             throw new BadRequestException(`Erro no firebase: ${e.message}`);
         }
     }
@@ -79,7 +90,8 @@ export class AuthService {
                 subject: 'Redefinir senha',
                 to: email,
                 requestName: 'IBB',
-                phone: ''
+                phone: '',
+                memberIdRequested: ''
             }, passwordResetLink);
 
         } catch (e) {
@@ -94,6 +106,16 @@ export class AuthService {
     async removeUser(user: UserEntity) {
         try {
             const uids = user.providersInfo.map((info) => info.uid);
+
+            uids.map((uid) => this.removeUserByUid(uid));
+        } catch (e) {
+            throw new BadRequestException(`Erro no firebase: ${e.message}`);
+        }
+    }
+
+    async removeUserV2(user: UserV2Entity) {
+        try {
+            const uids: string[] = user.autenticacao.providersInfo.map((info) => info.uid);
 
             uids.map((uid) => this.removeUserByUid(uid));
         } catch (e) {
@@ -119,12 +141,7 @@ export class AuthService {
             returnData = await auth.getUserByEmail(email);
         } catch (error) {
             console.log(error);
-            switch (error.errorInfo.code) {
-                case 'auth/user-not-found':
-                    returnData = false;
-                default:
-                    throw new BadRequestException(`Erro inesperado: ${error.errorInfo.message}`);
-            }
+            throw new BadRequestException(`Erro inesperado: ${error.errorInfo.message}`);
         }
 
         return returnData;

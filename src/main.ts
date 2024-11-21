@@ -1,7 +1,7 @@
-import { NestFactory } from '@nestjs/core';
+import {NestFactory, Reflector} from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import {Logger, ValidationPipe} from '@nestjs/common';
+import {ClassSerializerInterceptor, Logger, ValidationPipe} from '@nestjs/common';
 import * as bodyParser from 'body-parser';
 import * as dotenv from 'dotenv';
 import * as process from "process";
@@ -15,6 +15,8 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
   const appPrefix = 'v1';
   const swaggerPrefix = 'api';
+
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   const swaggerDocumentBuilder = new DocumentBuilder()
       .setTitle('IGREJA BATISTA DO BROOKLIN')

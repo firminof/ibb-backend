@@ -24,6 +24,7 @@ export interface IUserResponseApi {
     ministerio: string[];
     role?: string;
     updatedAt: string;
+    createdAt: string;
 
     data_ingresso?: string | null;
     forma_ingresso?: string | null;

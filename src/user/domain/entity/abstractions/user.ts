@@ -67,23 +67,32 @@ export interface User {
     status: StatusEnum;
     diacono: IUser;
     ministerio: string[];
+
+    // Dados de Endereço
     endereco?: UserAddress;
 
+    // Dados de Ingresso
     data_ingresso?: Date | null;
     forma_ingresso?: string | null;
     local_ingresso?: string | null;
 
+    // Transferência
     transferencia: Date | null;
     motivo_transferencia?: string | null;
+    local_transferencia?: string | null;
 
+    // Falecimento
     falecimento?: Date | null;
     motivo_falecimento?: string | null;
 
+    // Exclusão
     excluido?: Date | null;
     motivo_exclusao?: string | null;
 
+    // Visitas
     motivo_visita?: string | null;
 
+    // Informações de Autenticação
     providersInfo: FirebaseProviderInfo[];
 
     is_diacono: boolean;

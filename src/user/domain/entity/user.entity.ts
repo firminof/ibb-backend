@@ -103,6 +103,10 @@ export class UserEntity implements User {
     motivo_transferencia: User['motivo_transferencia']
 
     @Column()
+    @ApiProperty({type: String})
+    local_transferencia?: User['local_transferencia']
+
+    @Column()
     @ApiPropertyOptional({type: Date})
     falecimento: User['falecimento']
 

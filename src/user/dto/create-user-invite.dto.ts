@@ -87,6 +87,10 @@ export class CreateUserInviteDto {
     @IsOptional()
     motivo_transferencia: User['motivo_transferencia']
 
+    @ApiProperty({ type: String })
+    @IsOptional()
+    local_transferencia: User['local_transferencia']
+
     @ApiProperty({ type: Date })
     @IsOptional()
     falecimento: User['falecimento']

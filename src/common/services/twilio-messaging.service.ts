@@ -136,7 +136,7 @@ Clique no link abaixo para mudar a senha.
     }
 
     @OnEvent('twillio-whatsapp.send-invite.send')
-    async sendWhatsappMessageSendInviteWithTwilio(data: { numeroWhatsapp: string }) {
+    async sendWhatsappMessageSendInviteWithTwilio(data: { numeroWhatsapp: string, linkConvite: string }) {
         try {
             /*
             *Você foi convidado para ser membro da Igreja Batista do Brooklin*
@@ -152,27 +152,17 @@ _Se você não solicitou este convite, pode ignorar esta mensagem._
             const treatedRecipient: string = formatToInternationalStandard(
                 data.numeroWhatsapp
             );
-            let url: string = '';
-
-            const treatedPhone = data.numeroWhatsapp.replace(/\.|\-|([()])|\s|[+]/g, '');
-
-            if (process.env.APPLICATION_URL_PROD) {
-                Logger.log(`> [Service][Twillio][WhatsApp][SendInvite] URL PROD: ${process.env.APPLICATION_URL_PROD}`);
-                url = `${process.env.APPLICATION_URL_PROD}/invite?telefone=${treatedPhone}`;
-            } else {
-                url = `https://app.ibbrooklin.org.br/invite?telefone=${treatedPhone}`;
-            }
 
             Logger.log(``);
             Logger.log(`> [Service][Twillio][WhatsApp][SendInvite] para: ${treatedRecipient}`);
-            Logger.log(`> [Service][Twillio][WhatsApp][SendInvite] link(url): ${url}`);
+            Logger.log(`> [Service][Twillio][WhatsApp][SendInvite] link(url): ${data.linkConvite}`);
 
             const message = await client.messages.create({
                 contentSid: process.env.TWILIO_CONTENT_SID_CONVITE_MEMBRESIA,
                 messagingServiceSid: process.env.TWILIO_MESSAGE_SERVICE_SID,
                 from: `whatsapp:${sender}`,
                 contentVariables: JSON.stringify({
-                    1: url.toString()
+                    1: data.linkConvite.toString()
                 }),
                 to: `whatsapp:${treatedRecipient}`,
                 attempt: 3

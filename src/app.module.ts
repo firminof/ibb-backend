@@ -11,6 +11,7 @@ import {UserModule} from "./user/user.module";
 import {MinistrieModule} from "./ministrie/ministrie.module";
 import {AuthModule} from "./auth/auth.module";
 import {TwilioMessagingService} from "./common/services/twilio-messaging.service";
+import {UserV2Module} from "./user-v2/user-v2.module";
 
 @Module({
     imports: [
@@ -26,7 +27,8 @@ import {TwilioMessagingService} from "./common/services/twilio-messaging.service
 
         UserModule,
         MinistrieModule,
-        AuthModule
+        AuthModule,
+        UserV2Module
     ],
     controllers: [AppController],
     providers: [AppService],

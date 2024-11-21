@@ -97,6 +97,7 @@ export const formatListMember = (allMembers: UserEntity[]) => {
         const nome: string = formatNome(member.nome);
 
         const updatedAt: string = formatDataPtbr(member.updatedAt);
+        const createdAt: string = formatDataPtbr(member.createdAt);
         const falecimento: string = formatDataPtbr(member.falecimento);
         const excluido: string = formatDataPtbr(member.excluido);
         const data_ingresso: string = formatDataPtbr(member.data_ingresso);
@@ -135,6 +136,7 @@ export const formatListMember = (allMembers: UserEntity[]) => {
             falecimento,
             excluido,
             updatedAt,
+            createdAt,
             data_ingresso,
             forma_ingresso: member.forma_ingresso,
             local_ingresso: member.local_ingresso,
@@ -142,7 +144,7 @@ export const formatListMember = (allMembers: UserEntity[]) => {
             motivo_falecimento: member.motivo_falecimento,
             motivo_exclusao: member.motivo_exclusao,
             motivo_visita: member.motivo_visita,
-            is_diacono: member.is_diacono
+            is_diacono: member.is_diacono,
         }
 
         return user;
@@ -150,13 +152,13 @@ export const formatListMember = (allMembers: UserEntity[]) => {
 }
 
 export const formatToInternationalStandard = (phone: string) => {
-    const includesCountryCode = phone.includes('+55');
+    const includesCountryCode: boolean = phone.includes('+55');
 
     if (includesCountryCode) {
-        return phone;
+        return phone.replace(/\.|\-|([()])|\s/g, '');
     }
 
-    const treatedPhone = phone.replace(/\.|\-|([()])|\s|[+]/g, '');
+    const treatedPhone: string = phone.replace(/\.|\-|([()])|\s|[+]/g, '');
 
     return '+55' + treatedPhone;
 };

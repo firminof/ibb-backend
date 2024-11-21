@@ -133,6 +133,7 @@ export class UserService {
             status: validatedInput.status,
             telefone: validatedInput.telefone,
             transferencia: validatedInput.transferencia,
+            local_transferencia: validatedInput.local_transferencia,
             createdAt: new Date(),
             updatedAt: new Date(),
             data_ingresso: validatedInput.data_ingresso,
