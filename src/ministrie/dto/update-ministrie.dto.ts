@@ -1,18 +1,6 @@
-import {ApiProperty} from "@nestjs/swagger";
+import {ApiProperty, PartialType} from "@nestjs/swagger";
 import {IsArray, IsOptional} from "class-validator";
-import {UserDto} from "../../user/dto/update-user.dto";
+import {IMemberDto} from "../../user-v2/dto/create-user-v2.dto";
+import {CreateMinistrieDto} from "./create-ministrie.dto";
 
-export class UpdateMinistrieDto {
-    @ApiProperty({type: String})
-    @IsOptional()
-    nome: string;
-
-    @ApiProperty({type: String})
-    @IsOptional()
-    categoria: string;
-
-    @ApiProperty({type: [UserDto]})
-    @IsArray()
-    @IsOptional()
-    responsavel: UserDto[];
-}
+export class UpdateMinistrieDto extends PartialType(CreateMinistrieDto) {}

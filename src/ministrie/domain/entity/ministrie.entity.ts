@@ -1,27 +1,46 @@
 import {Column, CreateDateColumn, Entity, ObjectIdColumn, UpdateDateColumn} from "typeorm";
 import {ApiProperty} from "@nestjs/swagger";
-import {UserDto} from "../../../user/dto/create-user.dto";
+import {IMemberDto} from "../../../user-v2/dto/create-user-v2.dto";
+import {Type} from "class-transformer";
+
+export enum MinisterioCategoriasEnum {
+    eclesiastico = 'eclesiastico',
+    pessoas = 'pessoas',
+    coordenacao = 'coordenacao',
+}
 
 @Entity()
 export class MinistrieEntity {
     @ObjectIdColumn()
+    @ApiProperty({
+        description: 'Identificação do ministério no banco de dados',
+        example: '673ecfbc376a0b1f631c9383',
+        type: String
+    })
     _id?: string;
 
     @Column()
-    @ApiProperty({type: String})
+    @ApiProperty({
+        description: 'Nome do ministério',
+        example: '673ecfbc376a0b1f631c9383',
+        type: String
+    })
     nome: string;
 
-    @Column()
-    @ApiProperty({type: String})
-    categoria: string;
+    @Column({type: "enum", enum: MinisterioCategoriasEnum})
+    @ApiProperty()
+    categoria: MinisterioCategoriasEnum;
 
     @Column()
-    @ApiProperty()
-    responsavel: UserDto[];
+    @ApiProperty({description: "Lista de responsáveis", type: [IMemberDto]})
+    @Type(() => IMemberDto)
+    responsavel: IMemberDto[];
 
     @CreateDateColumn()
+    @ApiProperty()
     createdAt: Date;
 
     @UpdateDateColumn()
+    @ApiProperty()
     updatedAt: Date;
 }

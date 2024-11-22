@@ -122,4 +122,7 @@ export interface UserV2 {
     autenticacao: {
         providersInfo: FirebaseProviderInfoV2[];
     };
+
+    // Membro é diacono
+    isDiacono: boolean;
 }

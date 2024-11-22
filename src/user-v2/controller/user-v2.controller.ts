@@ -30,6 +30,20 @@ export class UserV2Controller {
         return this.userV2Service.getAll();
     }
 
+    @Get('diaconos')
+    @HttpCode(HttpStatus.OK)
+    @ApiResponse({
+        status: HttpStatus.OK,
+        type: UserV2Entity,
+        isArray: true
+    })
+    async getAllDiaconos(): Promise<UserV2Entity[]> {
+        Logger.log(``);
+        Logger.log(`> [Controller][User V2][GET][getAllDiaconos] - init`);
+        return this.userV2Service.getAllDiaconos();
+    }
+
+
     @Get('invites/all')
     @HttpCode(HttpStatus.OK)
     @ApiResponse({

@@ -7,6 +7,7 @@ import {
 } from "./abstractions/user-v2.abstraction";
 import {Expose, Type} from "class-transformer";
 import {FirebaseProviderInfoV2Dto, IMemberDto, UserAddressV2Dto} from "../../dto/create-user-v2.dto";
+import {User} from "../../../user/domain/entity/abstractions/user";
 
 export class CasamentoDto {
     @ApiPropertyOptional({ description: "Dados do cônjuge", type: IMemberDto })
@@ -89,6 +90,11 @@ export class AutenticacaoDto {
 export class UserV2Entity implements UserV2 {
     // Identificação na base de dados
     @ObjectIdColumn()
+    @ApiProperty({
+        description: 'Identificação do usuário no banco de dados',
+        example: '673ecfbc376a0b1f631c9383',
+        type: String
+    })
     _id?: UserV2['_id'];
 
     // Nome do usuário
@@ -215,6 +221,10 @@ export class UserV2Entity implements UserV2 {
     @Column()
     @ApiProperty({ type: AutenticacaoDto })
     autenticacao: UserV2['autenticacao'];
+
+    @Column()
+    @ApiProperty({type: Boolean})
+    isDiacono: UserV2['isDiacono'];
 
     @CreateDateColumn()
     createdAt: Date;

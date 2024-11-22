@@ -9,7 +9,30 @@ export class UserV2Repository extends Repository<UserV2Entity> {
     }
 
     async getAll(): Promise<UserV2Entity[]> {
-        const users: UserV2Entity[] = await this.find({ where: {}, order: { nome: 'ASC' } });
+        const users: UserV2Entity[] = await this.find({where: {}, order: {nome: 'ASC'}});
+
+        return users.sort((a: any, b: any) =>
+            a.nome
+                .replace(/[^a-zA-Z0-9]/g, '')
+                .toLowerCase()
+                .trim() >
+            b.nome
+                .replace(/[^a-zA-Z0-9]/g, '')
+                .toLowerCase()
+                .trim()
+                ? 1
+                : -1,
+        );
+    }
+
+    async getAllDiaconos(): Promise<UserV2Entity[]> {
+        const users: UserV2Entity[] = await this.find({
+            where: {
+                isDiacono: true,
+            }, order: {
+                nome: 'ASC'
+            }
+        });
 
         return users.sort((a: any, b: any) =>
             a.nome

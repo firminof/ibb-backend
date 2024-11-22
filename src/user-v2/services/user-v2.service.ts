@@ -47,6 +47,23 @@ export class UserV2Service {
         }
     }
 
+    async getAllDiaconos(): Promise<UserV2Entity[]> {
+        Logger.log(`> [Service][User V2][GET][getAllDiaconos] - init`);
+        try {
+            const allMembers: UserV2Entity[] = await this.userV2Repository.getAllDiaconos();
+            if (allMembers.length === 0) return [];
+
+            return this.mapMemberList(allMembers);
+        } catch (e) {
+            Logger.log(`> [Service][User V2][GET][getAllDiaconos] catch - ${JSON.stringify(e)}`);
+
+            if (e['message'] === 'No metadata for "UserV2Entity" was found.') {
+                throw new BadRequestException('Nenhum item encontrado na base de dados!');
+            }
+            throw new BadRequestException(e['message']);
+        }
+    }
+
     async getAllInvites(): Promise<InviteV2Entity[]> {
         Logger.log(`> [Service][User V2][GET][getAllInvites] - init`);
 
@@ -262,6 +279,7 @@ export class UserV2Service {
                 visitas: member.visitas,
 
                 autenticacao: member.autenticacao,
+                isDiacono: member.isDiacono,
                 createdAt: member.createdAt,
                 updatedAt: member.updatedAt,
             }
@@ -470,22 +488,6 @@ export class UserV2Service {
         Logger.log(`> [Service][User V2][PUT][update][data] - ${JSON.stringify(data)}`);
 
         try {
-            if (!(data && data.role in UserRoles)) {
-                throw new BadRequestException('Regra de usuário inválida!');
-            }
-
-            if (!(data && data.status in StatusEnum)) {
-                throw new BadRequestException('Status inválido!');
-            }
-
-            if (!(data && data.informacoesPessoais.estadoCivil in EstadoCivilEnum)) {
-                throw new BadRequestException('Estado civil inválido!');
-            }
-
-            if (data && data.cpf) {
-                validateCPFLength(data.cpf);
-            }
-
             const user: UserV2Entity = await this.userV2Repository.findById(id);
             Logger.log(`> [Service][User V2][PUT][update][findById] - ${JSON.stringify(user)}`);
 

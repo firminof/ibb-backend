@@ -5,6 +5,11 @@ import {ApiProperty} from "@nestjs/swagger";
 export class InviteV2Entity {
     // Identificação na base de dados
     @ObjectIdColumn()
+    @ApiProperty({
+        description: 'Identificação do convite enviado',
+        example: '673ecfbc376a0b1f631c9383',
+        type: String
+    })
     _id?: string;
 
     // ID do usuário que mandou o convite

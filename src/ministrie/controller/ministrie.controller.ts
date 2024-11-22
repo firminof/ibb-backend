@@ -19,8 +19,10 @@ export class MinistrieController {
     @HttpCode(HttpStatus.OK)
     @ApiResponse({
         status: HttpStatus.OK,
+        type: MinistrieEntity,
+        isArray: true
     })
-    async getAll(): Promise<IListMinistriesDto[]> {
+    async getAll(): Promise<MinistrieEntity[]> {
         Logger.log(``);
         Logger.log(`> [Controller][Ministrie][GET][getAll] - init`);
         return this.ministrieService.getAll();

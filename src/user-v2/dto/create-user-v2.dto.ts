@@ -257,4 +257,8 @@ export class CreateUserV2Dto {
     visitas: {
         motivo: string | null;
     };
+
+    @Column(type => Boolean)
+    @ApiProperty({description: 'Indica se o membro é um diácono', example: false})
+    isDiacono: boolean;
 }

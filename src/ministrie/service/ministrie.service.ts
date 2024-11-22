@@ -1,106 +1,116 @@
 import {BadRequestException, Injectable, Logger, NotFoundException} from "@nestjs/common";
-import {MinistrieEntity} from "../domain/entity/ministrie.entity";
+import {MinisterioCategoriasEnum, MinistrieEntity} from "../domain/entity/ministrie.entity";
 import {MinistrieRepository} from "../repository/ministrie.repository";
 import {CreateMinistrieDto} from "../dto/create-ministrie.dto";
 import {UpdateMinistrieDto} from "../dto/update-ministrie.dto";
 import {DeleteMinistrieDto} from "../dto/delete-ministrie.dto";
 import {IListMinistriesDto} from "../dto/list-ministries.dto";
-import {formatDataHoraPtbr} from "../../common/helpers/helpers";
+import {formatDataHoraPtbr, formatNome} from "../../common/helpers/helpers";
 
 @Injectable()
 export class MinistrieService {
-    constructor(private ministrieRepository: MinistrieRepository) {
+    constructor(private readonly ministrieRepository: MinistrieRepository) {
     }
 
-    async getAll(): Promise<IListMinistriesDto[]> {
-        Logger.log(`> [Service][Ministrie][GET][getAll] - init`);
+    async getAll(): Promise<MinistrieEntity[]> {
+        Logger.log('[Service][Ministrie][GET][getAll] - Fetching all ministries');
 
         try {
-            const ministerios: MinistrieEntity[] = await this.ministrieRepository.getAll();
+            const ministerios = await this.ministrieRepository.getAll();
 
-            return ministerios.map((ministerio: MinistrieEntity):IListMinistriesDto => (
-                {
-                    _id: ministerio._id,
-                    nome: ministerio.nome,
-                    responsavel: ministerio.responsavel,
-                    categoria: ministerio.categoria,
-                    updatedAt: formatDataHoraPtbr(ministerio.updatedAt),
-                    createdAt: formatDataHoraPtbr(ministerio.createdAt),
-                }
-            ));
-        } catch (e) {
-            Logger.log(`> [Service][Ministrie][GET][getAll] catch - ${JSON.stringify(e)}`);
-            // if (e['message'] == 'No metadata for "MinistrieEntity" was found.') {
-            //     throw new BadRequestException
-            // }
-            throw new BadRequestException(e['message']);
+            return ministerios.map((ministerio) => ({
+                _id: ministerio._id.toString(),
+                nome: formatNome(ministerio.nome),
+                responsavel: ministerio.responsavel,
+                categoria: ministerio.categoria,
+                updatedAt: ministerio.updatedAt,
+                createdAt: ministerio.createdAt,
+            }));
+        } catch (error) {
+            Logger.error('[Service][Ministrie][GET][getAll] - Error fetching ministries', error.stack);
+            throw new BadRequestException(error.message || 'Erro ao buscar ministérios');
         }
     }
 
-    async create(data: CreateMinistrieDto) {
-        Logger.log(`> [Service][Ministrie][POST][create] - init`);
+    async create(data: CreateMinistrieDto): Promise<MinistrieEntity> {
+        Logger.log('[Service][Ministrie][POST][create] - Starting ministry creation');
 
         try {
+            if (!data) throw new BadRequestException('Dados não fornecidos');
+
+            if (data.nome.length <= 3) {
+                throw new BadRequestException('O nome do ministério deve ter mais de 3 caracteres.');
+            }
+
+            if (!data.responsavel?.length) {
+                throw new BadRequestException('É necessário especificar pelo menos um responsável.');
+            }
+
+            if (!(data.categoria in MinisterioCategoriasEnum)) {
+                throw new BadRequestException('Categoria inválida!');
+            }
+
             const newMinistrie: MinistrieEntity = {
                 nome: data.nome,
                 responsavel: data.responsavel,
                 categoria: data.categoria,
                 createdAt: new Date(),
                 updatedAt: new Date(),
-            }
+            };
 
-            Logger.log(`> [Service][Ministrie][POST][create] newMinistrie - ${JSON.stringify(newMinistrie)}`);
+            Logger.debug('[Service][Ministrie][POST][create] - New ministry data:', newMinistrie);
 
             const saved = await this.ministrieRepository.save(newMinistrie);
-            Logger.log(`> [Service][Ministrie][POST][create] saved - ${JSON.stringify(saved)}`);
-            Logger.log(`> [Service][Ministrie][POST][create] - finished`);
-        } catch (e) {
-            Logger.log(`> [Service][Ministrie][POST][create] catch - ${JSON.stringify(e)}`);
-            throw new BadRequestException(e['message']);
+
+            Logger.log('[Service][Ministrie][POST][create] - Ministry created successfully');
+            return saved;
+        } catch (error) {
+            Logger.error('[Service][Ministrie][POST][create] - Error creating ministry', error.stack);
+            throw new BadRequestException(error.message || 'Erro ao criar ministério');
         }
     }
 
-    async update(id: string, data: UpdateMinistrieDto) {
-        Logger.log(`> [Service][Ministrie][PUT][update] init`);
+    async update(id: string, data: UpdateMinistrieDto): Promise<MinistrieEntity> {
+        Logger.log('[Service][Ministrie][PUT][update] - Starting update process');
 
         try {
-            const ministrie: MinistrieEntity = await this.ministrieRepository.findById(id);
-
-            Logger.log(`> [Service][User][PUT][update][findById] - ${JSON.stringify(ministrie)}`);
+            const ministrie = await this.ministrieRepository.findById(id);
 
             if (!ministrie) {
                 throw new NotFoundException('Ministério não encontrado!');
             }
 
-            const saved = await this.ministrieRepository.save({
+            const updatedMinistrie = {
                 ...ministrie,
-                ...data
-            })
-            Logger.log(`> [Service][Ministrie][PUT][update] saved - ${JSON.stringify(saved)}`);
-            Logger.log(`> [Service][Ministrie][PUT][update] finished`);
-        } catch (e) {
-            Logger.log(`> [Service][Ministrie][PUT][update] catch - ${JSON.stringify(e)}`);
-            throw new BadRequestException(e['message']);
+                ...data,
+                updatedAt: new Date(),
+            };
+
+            const saved = await this.ministrieRepository.save(updatedMinistrie);
+
+            Logger.log('[Service][Ministrie][PUT][update] - Ministry updated successfully');
+            return saved;
+        } catch (error) {
+            Logger.error('[Service][Ministrie][PUT][update] - Error updating ministry', error.stack);
+            throw new BadRequestException(error.message || 'Erro ao atualizar ministério');
         }
     }
 
-    async delete(param: DeleteMinistrieDto) {
-        Logger.log(`> [Service][Ministrie][DELETE] init`);
+    async delete(param: DeleteMinistrieDto): Promise<void> {
+        Logger.log('[Service][Ministrie][DELETE] - Starting delete process');
 
         try {
-            const ministrie: MinistrieEntity = await this.ministrieRepository.findById(param.id);
-
-            Logger.log(`> [Service][User][DELETE][update][findById] - ${JSON.stringify(ministrie)}`);
+            const ministrie = await this.ministrieRepository.findById(param.id);
 
             if (!ministrie) {
                 throw new NotFoundException('Ministério não encontrado!');
             }
 
             await this.ministrieRepository.deleteMinistrie(ministrie);
-        } catch (e) {
-            Logger.log(`> [Service][Ministrie][DELETE] catch - ${JSON.stringify(e)}`);
-            throw new BadRequestException(e['message']);
+            Logger.log('[Service][Ministrie][DELETE] - Ministry deleted successfully');
+        } catch (error) {
+            Logger.error('[Service][Ministrie][DELETE] - Error deleting ministry', error.stack);
+            throw new BadRequestException(error.message || 'Erro ao deletar ministério');
         }
-
     }
 }
