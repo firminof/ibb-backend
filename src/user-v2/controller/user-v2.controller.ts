@@ -108,7 +108,7 @@ export class UserV2Controller {
     @Put(':id')
     @HttpCode(HttpStatus.OK)
     @ApiResponse({status: HttpStatus.NO_CONTENT})
-    async update(@Param('id') id: string, @Body() data: UpdateUserV2Dto): Promise<(DeepPartial<UserV2Entity> & UserV2Entity)[]> {
+    async update(@Param('id') id: string, @Body() data: UpdateUserV2Dto): Promise<UserV2Entity> {
         Logger.log(``);
         Logger.log(`> [Controller][User V2][PUT][Update] - init`);
         return this.userV2Service.update(id, data);

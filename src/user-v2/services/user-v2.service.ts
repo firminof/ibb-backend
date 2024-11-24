@@ -31,6 +31,7 @@ export class UserV2Service {
     }
 
     async getAll(): Promise<UserV2Entity[]> {
+        Logger.log(`> `);
         Logger.log(`> [Service][User V2][GET][getAll] - init`);
         try {
             const allMembers: UserV2Entity[] = await this.userV2Repository.getAll();
@@ -48,6 +49,7 @@ export class UserV2Service {
     }
 
     async getAllDiaconos(): Promise<UserV2Entity[]> {
+        Logger.log(`> `);
         Logger.log(`> [Service][User V2][GET][getAllDiaconos] - init`);
         try {
             const allMembers: UserV2Entity[] = await this.userV2Repository.getAllDiaconos();
@@ -65,6 +67,7 @@ export class UserV2Service {
     }
 
     async getAllInvites(): Promise<InviteV2Entity[]> {
+        Logger.log(`> `);
         Logger.log(`> [Service][User V2][GET][getAllInvites] - init`);
 
         try {
@@ -75,7 +78,7 @@ export class UserV2Service {
             if (allMembers.length === 0) {
                 Logger.warn("> [Service][User V2][GET][getAllInvites] - Nenhum membro encontrado.");
                 return allInvites.map((item: InviteV2Entity) => ({
-                    _id: item._id.toString(),
+                    _id: item?._id?.toString(),
                     memberIdRequested: item.memberIdRequested,
                     to: item.to,
                     phone: item.phone,
@@ -90,9 +93,9 @@ export class UserV2Service {
             const memberMap: Map<string, UserV2Entity> = new Map(allMembers.map((member: UserV2Entity) => [member._id.toString(), member]));
 
             return allInvites.map((item: InviteV2Entity) => {
-                const correspondingMember: UserV2Entity = memberMap.get(item.memberIdRequested.toString());
+                const correspondingMember: UserV2Entity = memberMap.get(item.memberIdRequested?.toString());
 
-                Logger.debug(`> [Service][User V2][GET][getAllInvites] - Invite ID: ${item._id}, Member ID: ${correspondingMember._id.toString()}, Member Found: ${correspondingMember?.nome ?? "N/A"}`);
+                Logger.debug(`> [Service][User V2][GET][getAllInvites] - Invite ID: ${item._id}, Member ID: ${correspondingMember?._id?.toString()}, Member Found: ${correspondingMember?.nome ?? "N/A"}`);
 
                 return {
                     _id: item._id.toString(),
@@ -107,7 +110,7 @@ export class UserV2Service {
             });
 
         } catch (e) {
-            Logger.log(`> [Service][User V2][GET][getAllInvites] catch - ${JSON.stringify(e)}`);
+            Logger.error(`> [Service][User V2][GET][getAllInvites] catch - ${e.stack}`);
 
             if (e['message'] === 'No metadata for "InviteV2Entity" was found.') {
                 throw new BadRequestException('Nenhum item encontrado na base de dados!');
@@ -120,6 +123,7 @@ export class UserV2Service {
     }
 
     async getAllBirthdaysMonth(month: number): Promise<UserV2Entity[]> {
+        Logger.log(`> `);
         Logger.log(`> [Service][User V2][GET][getAllBirthdaysMonth] - init`);
         try {
             const allMembers: UserV2Entity[] = await this.userV2Repository.getAll();
@@ -144,14 +148,16 @@ export class UserV2Service {
     }
 
     async getById(id: string): Promise<UserV2Entity> {
+        Logger.log(`> `);
         Logger.log(`> [Service][User V2][GET][getById] - init`);
         try {
             const user: UserV2Entity = await this.userV2Repository.findById(id);
-            Logger.log(`> [Service][User V2][GET][getById] - ${JSON.stringify(user)}`);
-
             if (!user) {
                 throw new NotFoundException('Membro não encontrado!');
             }
+
+            const {foto, ...userToShow} = user;
+            Logger.log(`> [Service][User V2][GET][getById] - ${JSON.stringify(userToShow)}`);
 
             const formatList: UserV2Entity[] = this.mapMemberList([user]);
 
@@ -163,6 +169,7 @@ export class UserV2Service {
     }
 
     private async getInviteById(id: string): Promise<InviteV2Entity> {
+        Logger.log(`> `);
         Logger.log(`> [Service][User V2][GET][getInviteById] - init`);
         try {
             const invite: InviteV2Entity = await this.inviteV2Repository.findById(id);
@@ -180,11 +187,12 @@ export class UserV2Service {
     }
 
     async findByEmail(email: string): Promise<UserV2Entity> {
+        Logger.log(`> `);
         Logger.log(`> [Controller][User V2][GET][findByEmail] - init`);
         try {
             const user: UserV2Entity = await this.userV2Repository.findByEmail(email);
-
-            Logger.log(`> [Service][User V2][GET][findByEmail] - ${JSON.stringify(user)}`);
+            const {foto, ...userToShow} = user;
+            Logger.log(`> [Service][User V2][GET][findByEmail] - ${JSON.stringify(userToShow)}`);
             if (!user) {
                 throw new NotFoundException('Membro não encontrado!');
 
@@ -235,7 +243,12 @@ export class UserV2Service {
                     member.informacoesPessoais.casamento.conjugue.isDiacono : false;
             } else {
                 member.informacoesPessoais.casamento = {
-                    conjugue: null,
+                    conjugue: {
+                        id: "-1",
+                        isMember: false,
+                        isDiacono: false,
+                        nome: ""
+                    },
                     dataCasamento: null
                 }
             }
@@ -256,32 +269,29 @@ export class UserV2Service {
                 email: member.email,
                 dataNascimento: member.dataNascimento,
                 idade: member.idade,
-                foto: member.foto,
                 diacono: member.diacono,
                 endereco: member.endereco,
                 status: member.status,
-                exclusao: member.exclusao,
-
-                falecimento: member.falecimento,
+                ministerio: member.ministerio,
 
                 informacoesPessoais: {
                     casamento: member.informacoesPessoais.casamento,
                     estadoCivil: member.informacoesPessoais.estadoCivil,
                     filhos: member.informacoesPessoais.filhos,
+                    temFilhos: member.informacoesPessoais.temFilhos
                 },
 
-                ingresso: member.ingresso,
-
-                ministerio: member.ministerio,
-
-                transferencia: member.transferencia,
-
-                visitas: member.visitas,
+                exclusao: member.exclusao ? member.exclusao: {data: null, motivo: ''},
+                falecimento: member.falecimento ? member.falecimento : {data: null, motivo: '', local: ''},
+                ingresso: member.ingresso ? member.ingresso : {data: null, local: '', forma: ''},
+                transferencia: member.transferencia ? member.transferencia : {data: null, motivo: '', local: ''},
+                visitas: member.visitas ? member.visitas : {motivo: ''},
 
                 autenticacao: member.autenticacao,
                 isDiacono: member.isDiacono,
                 createdAt: member.createdAt,
                 updatedAt: member.updatedAt,
+                foto: member.foto,
             }
 
             return user;
@@ -289,6 +299,7 @@ export class UserV2Service {
     }
 
     async create(data: CreateUserV2Dto) {
+        Logger.log(`> `);
         Logger.log(`> [Service][User V2][POST][Create] - init`);
 
         try {
@@ -319,6 +330,7 @@ export class UserV2Service {
     }
 
     async acceptInvite(inviteId: string, password: string, data: CreateUserV2Dto): Promise<UserV2Entity> {
+        Logger.log(`> `);
         Logger.log(`> [Service][User V2][POST][acceptInvite] - init`);
 
         try {
@@ -378,6 +390,7 @@ export class UserV2Service {
     }
 
     private async createUserUniversal(data: CreateUserV2Dto, password?: string): Promise<UserV2Entity> {
+        Logger.log(`> `);
         Logger.log(`> [Service][User V2][Post][createUserUniversal] - init`);
         Logger.log(`> [Service][User V2][Post][createUserUniversal] data - ${JSON.stringify(data)}`);
 
@@ -418,14 +431,14 @@ export class UserV2Service {
             local: data.falecimento.local,
             motivo: data.falecimento.motivo
         };
-        user.foto = data.foto;
         user.informacoesPessoais = {
             casamento: {
                 conjugue: data.informacoesPessoais.casamento.conjugue,
                 dataCasamento: data.informacoesPessoais.casamento.dataCasamento
             },
             estadoCivil: data.informacoesPessoais.estadoCivil,
-            filhos: data.informacoesPessoais.filhos
+            filhos: data.informacoesPessoais.filhos,
+            temFilhos: data.informacoesPessoais.temFilhos,
         };
         user.ingresso = {
             data: data.ingresso.data,
@@ -441,7 +454,11 @@ export class UserV2Service {
             motivo: data.visitas.motivo
         }
 
-        Logger.debug(`> save member ${password ? 'aceitando convite' : ''}: `, JSON.stringify(user));
+        user.foto = data.foto;
+        user.isDiacono = data.isDiacono;
+
+        const {foto,...userToShow} = user;
+        Logger.debug(`> save member ${password ? 'aceitando convite' : ''}: `, JSON.stringify(userToShow));
 
         const saved: UserV2Entity = await this.userV2Repository.save(user);
 
@@ -482,35 +499,56 @@ export class UserV2Service {
         return saved;
     }
 
-    async update(id: string, data: any): Promise<(DeepPartial<UserV2Entity> & UserV2Entity)[]> {
+    async update(id: string, data:any): Promise<UserV2Entity> {
+        Logger.log(`> `);
         Logger.log(`> [Service][User V2][PUT][update] init`);
         Logger.log(`> [Service][User V2][PUT][update][id] - ${id}`);
         Logger.log(`> [Service][User V2][PUT][update][data] - ${JSON.stringify(data)}`);
 
         try {
-            const user: UserV2Entity = await this.userV2Repository.findById(id);
-            Logger.log(`> [Service][User V2][PUT][update][findById] - ${JSON.stringify(user)}`);
+            const user: UserV2Entity = await this.userV2Repository.findOneBy({ _id: id });
+            const {foto,...userToShow} = user;
+            Logger.log(`> [Service][User V2][PUT][update][findById] - ${JSON.stringify(userToShow)}`);
 
             if (!user) {
                 throw new NotFoundException('Membro não encontrado!');
             }
 
-            const saved: (DeepPartial<UserV2Entity> & UserV2Entity)[] = await this.userV2Repository.save({
-                ...user,
-                ...data
-            })
-            Logger.log(`> [Service][User V2][PUT][update] saved - ${JSON.stringify(saved)}`);
-            Logger.log(`> [Service][User V2][PUT][update] finished`);
-            return saved;
+            // Filtrar apenas os campos que mudaram
+            const updatedData = Object.keys(data).reduce((acc, key) => {
+                if (JSON.stringify(data[key]) !== JSON.stringify(user[key])) {
+                    acc[key] = data[key];
+                }
+                return acc;
+            }, {});
+
+            if (Object.keys(updatedData).length === 0) {
+                Logger.log(`> [Service][User V2][PUT][update] No changes detected`);
+                return user; // Retorna o usuário sem alterações
+            }
+
+            Logger.log(`> [Service][User V2][PUT][update][updatedData] - ${JSON.stringify(updatedData)}`);
+
+            // Realizar o update diretamente no banco
+            await this.userV2Repository.update(id, updatedData);
+
+            // Retornar o estado atualizado do usuário
+            const updatedUser: UserV2Entity = await this.userV2Repository.findOneBy({ _id: id });
+            Logger.log(`> [Service][User V2][PUT][update][updatedUser] - ${JSON.stringify(updatedUser)}`);
+            return updatedUser!;
         } catch (e) {
             Logger.log(`> [Service][User V2][PUT][update] catch - ${JSON.stringify(e)}`);
-            if (e['message'].includes('E11000 duplicate key error collection'))
+            if (e['message'].includes('E11000 duplicate key error collection')) {
                 throw new BadRequestException('Houve uma falha ao atualizar o membro, tente novamente.');
+            }
             throw new BadRequestException(e['message']);
         }
     }
 
+
+
     async delete(param: DeleteUserV2Dto): Promise<boolean> {
+        Logger.log(`> `);
         Logger.log(`> [Service][User V2][DELETE] init`);
         try {
             const user: UserV2Entity = await this.userV2Repository.findById(param.id);
@@ -525,12 +563,13 @@ export class UserV2Service {
 
             return true;
         } catch (e) {
-            Logger.log(`> [Service][User V2][DELETE] catch - ${JSON.stringify(e)}`);
+            Logger.error(`> [Service][User V2][DELETE] catch - ${JSON.stringify(e)}`);
             throw new BadRequestException(e['message']);
         }
     }
 
     async deleteInvite(param: DeleteUserV2Dto): Promise<boolean> {
+        Logger.log(`> `);
         Logger.log(`> [Service][User V2][DELETE INVITE] init`);
         try {
             const invite: InviteV2Entity = await this.inviteV2Repository.findById(param.id);
@@ -550,6 +589,7 @@ export class UserV2Service {
     }
 
     async sendInvite(data: SendEmailDto): Promise<string> {
+        Logger.log(`> `);
         Logger.log(`> [Service][User V2][POST][sendInvite] - init`);
 
         if (data.phone.length > 0 && data.phone !== 'string') {

@@ -33,6 +33,9 @@ export class InformacoesPessoaisDto {
     @ApiProperty({ description: "Lista de filhos", type: [IMemberDto] })
     @Type(() => IMemberDto)
     filhos: IMemberDto[];
+
+    @ApiProperty({description: "Membro tem filhos", type: Boolean})
+    temFilhos: boolean;
 }
 
 export class IngressoDto {
@@ -108,8 +111,8 @@ export class UserV2Entity implements UserV2 {
     // Foto do usuário
     @Column()
     @ApiProperty({
-        description: 'URL da foto do usuário',
-        example: 'https://example.com/foto.jpg',
+        description: 'Foto do usuário',
+        example: 'base64',
     })
     foto: UserV2['foto'];
 

@@ -114,11 +114,14 @@ export class AuthService {
     }
 
     async removeUserV2(user: UserV2Entity) {
+        Logger.log(`> [Service][User V2][DELETE][removeUserV2] init`);
+        Logger.log(JSON.stringify(user));
         try {
             const uids: string[] = user.autenticacao.providersInfo.map((info) => info.uid);
 
             uids.map((uid) => this.removeUserByUid(uid));
         } catch (e) {
+            Logger.error(e);
             throw new BadRequestException(`Erro no firebase: ${e.message}`);
         }
     }

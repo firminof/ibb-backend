@@ -77,6 +77,7 @@ export interface UserV2 {
             dataCasamento: Date | null;
         };
         filhos: IMember[];
+        temFilhos: boolean;
     };
 
     // Cargo e Ministério

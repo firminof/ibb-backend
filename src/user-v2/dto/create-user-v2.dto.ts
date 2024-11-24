@@ -75,10 +75,6 @@ export class CreateUserV2Dto {
     })
     @IsString()
     @IsOptional()
-    @Matches(
-        /(https?:\/\/.*\.(?:png|jpg|jpeg|gif|svg))/i,
-        { message: 'A foto deve ser uma URL válida para uma imagem.' }
-    )
     foto: string;
 
     // CPF do usuário
@@ -148,10 +144,11 @@ export class CreateUserV2Dto {
         example: {
             estadoCivil: CivilStateEnumV2.casado,
             casamento: {
-                conjugue: {id: 1, nome: 'João Silva', isMember: true, isDiacono: false},
+                conjugue: {id: "1", nome: 'João Silva', isMember: true, isDiacono: false},
                 dataCasamento: '2010-01-01',
             },
-            filhos: [{id: 2, nome: 'Pedro Oliveira', isMember: false, isDiacono: false}],
+            filhos: [{id: "2", nome: 'Pedro Oliveira', isMember: false, isDiacono: false}],
+            temFilhos: true,
         },
     })
     informacoesPessoais: {
@@ -161,6 +158,7 @@ export class CreateUserV2Dto {
             dataCasamento: Date | null;
         };
         filhos: IMember[];
+        temFilhos: boolean;
     };
 
     // Cargo e Ministério
@@ -169,7 +167,7 @@ export class CreateUserV2Dto {
         type: Object,
         description: 'Informações do cargo e ministério do usuário',
         example: {
-            id: 1, nome: 'João Silva', isMember: true, isDiacono: true,
+            id: "1", nome: 'João Silva', isMember: true, isDiacono: true,
         },
     })
     diacono: IMember;
