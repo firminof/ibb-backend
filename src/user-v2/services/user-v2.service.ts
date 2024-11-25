@@ -12,12 +12,10 @@ import {CreateUserV2Dto} from "../dto/create-user-v2.dto";
 import {EstadoCivilEnum, Providers, StatusEnum, UserRoles} from "../../user/domain/entity/abstractions/user";
 import {validateCPFLength} from "../../common/validations/cpf";
 import {formatPhoneNumber} from "../../common/validations/telefone";
-import {DeepPartial} from "typeorm";
 import {DeleteUserV2Dto} from "../dto/delete-user-v2.dto";
 import {SendEmailDto} from "../../user/dto/send-email.dto";
 import {InviteV2Repository} from "../repository/invite-v2.repository";
 import {InviteV2Entity} from "../domain/entity/invite-v2.entity";
-import {UpdateUserV2Dto} from "../dto/update-user-v2.dto";
 
 @Injectable()
 export class UserV2Service {
