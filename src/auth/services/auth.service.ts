@@ -159,11 +159,10 @@ export class AuthService {
     async setCustomClaimsForUser(uid: string, role: string, mongoId: string) {
         const auth = admin.auth(firebaseApp);
 
-        const userRecord = await auth.getUser(uid);
+        // const userRecord = await auth.getUser(uid);
+        Logger.debug(`> [Service][Auth]setCustomClaimsForUser]`);
 
-        if (!userRecord.customClaims) {
-            await auth.setCustomUserClaims(uid, {role, mongoId});
-        }
+        await auth.setCustomUserClaims(uid, {role, mongoId});
     }
 
     async sendEmailResetEmail(data: SendEmailDto, link: string) {

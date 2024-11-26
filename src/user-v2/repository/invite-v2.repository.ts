@@ -1,7 +1,6 @@
 import {Injectable} from "@nestjs/common";
 import {DataSource, Repository} from "typeorm";
 import {InviteV2Entity} from "../domain/entity/invite-v2.entity";
-import {UserEntity} from "../../user/domain/entity/user.entity";
 
 @Injectable()
 export class InviteV2Repository extends Repository<InviteV2Entity> {
@@ -30,7 +29,7 @@ export class InviteV2Repository extends Repository<InviteV2Entity> {
         return await this.findOneById(id);
     }
 
-    async findByEmail(email: string): Promise<any> {
+    async findByEmail(email: string): Promise<InviteV2Entity> {
         const invites: InviteV2Entity[] = await this.find({
             where: {
                 to: email,
@@ -38,6 +37,14 @@ export class InviteV2Repository extends Repository<InviteV2Entity> {
         });
 
         return invites[0];
+    }
+
+    async findByMemberIdRequested(id: string): Promise<InviteV2Entity[]> {
+        return await this.find({
+            where: {
+                memberIdRequested: id,
+            },
+        });
     }
 
     async deleteInvite(invite: InviteV2Entity): Promise<InviteV2Entity> {

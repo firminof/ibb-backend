@@ -7,7 +7,7 @@ import {EmailService} from "../../user/service/email.service";
 import {AuthService} from "../../auth/services/auth.service";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {formatCPF, formatNome, formatTelefone} from "../../common/helpers/helpers";
-import {IMember} from "../domain/entity/abstractions/user-v2.abstraction";
+import {FirebaseProviderInfoV2, IMember} from "../domain/entity/abstractions/user-v2.abstraction";
 import {CreateUserV2Dto} from "../dto/create-user-v2.dto";
 import {EstadoCivilEnum, Providers, StatusEnum, UserRoles} from "../../user/domain/entity/abstractions/user";
 import {validateCPFLength} from "../../common/validations/cpf";
@@ -109,6 +109,62 @@ export class UserV2Service {
 
         } catch (e) {
             Logger.error(`> [Service][User V2][GET][getAllInvites] catch - ${e.stack}`);
+
+            if (e['message'] === 'No metadata for "InviteV2Entity" was found.') {
+                throw new BadRequestException('Nenhum item encontrado na base de dados!');
+            }
+            if (e['message'] === 'Cannot read properties of undefined (reading \'_id\')') {
+                throw new BadRequestException('Identificação do membro que enviou o convite está incorreto!');
+            }
+            throw new BadRequestException(e['message']);
+        }
+    }
+
+    async getAllByMemberIdRequested(id: string): Promise<InviteV2Entity[]> {
+        Logger.log(`> `);
+        Logger.log(`> [Service][User V2][GET][getAllByMemberIdRequested] - init`);
+
+        try {
+            const allInvites: InviteV2Entity[] = await this.inviteV2Repository.findByMemberIdRequested(id);
+            if (allInvites.length === 0) return [];
+
+            const allMembers: UserV2Entity[] = await this.userV2Repository.getAll();
+            if (allMembers.length === 0) {
+                Logger.warn("> [Service][User V2][GET][getAllByMemberIdRequested] - Nenhum membro encontrado.");
+                return allInvites.map((item: InviteV2Entity) => ({
+                    _id: item?._id?.toString(),
+                    memberIdRequested: item.memberIdRequested,
+                    to: item.to,
+                    phone: item.phone,
+                    isAccepted: item.isAccepted,
+                    requestName: item.requestName, // Mantém o valor original,
+                    createdAt: item.createdAt,
+                    updatedAt: item.updatedAt,
+                }));
+            }
+
+            // Criando um mapa para busca otimizada
+            const memberMap: Map<string, UserV2Entity> = new Map(allMembers.map((member: UserV2Entity) => [member._id.toString(), member]));
+
+            return allInvites.map((item: InviteV2Entity) => {
+                const correspondingMember: UserV2Entity = memberMap.get(item.memberIdRequested?.toString());
+
+                Logger.debug(`> [Service][User V2][GET][getAllByMemberIdRequested] - Invite ID: ${item._id}, Member ID: ${correspondingMember?._id?.toString()}, Member Found: ${correspondingMember?.nome ?? "N/A"}`);
+
+                return {
+                    _id: item._id.toString(),
+                    memberIdRequested: item.memberIdRequested,
+                    to: item.to,
+                    phone: item.phone,
+                    isAccepted: item.isAccepted,
+                    createdAt: item.createdAt,
+                    updatedAt: item.updatedAt,
+                    requestName: correspondingMember ? correspondingMember.nome : item.requestName,
+                };
+            });
+
+        } catch (e) {
+            Logger.error(`> [Service][User V2][GET][getAllByMemberIdRequested] catch - ${e.stack}`);
 
             if (e['message'] === 'No metadata for "InviteV2Entity" was found.') {
                 throw new BadRequestException('Nenhum item encontrado na base de dados!');
@@ -408,6 +464,13 @@ export class UserV2Service {
             validateCPFLength(data.cpf);
         }
 
+        if (data && data.diacono && data.diacono.id) {
+            const getDiaconoById: UserV2Entity = await this.getById(data.diacono.id);
+            data.diacono.nome = getDiaconoById.nome;
+            data.diacono.isDiacono = getDiaconoById.isDiacono;
+            data.diacono.isMember = true;
+        }
+
         const user: UserV2Entity = new UserV2Entity();
         user.cpf = data.cpf;
         user.nome = data.nome;
@@ -504,7 +567,7 @@ export class UserV2Service {
         Logger.log(`> [Service][User V2][PUT][update][data] - ${JSON.stringify(data)}`);
 
         try {
-            const user: UserV2Entity = await this.userV2Repository.findOneBy({ _id: id });
+            const user: UserV2Entity = await this.userV2Repository.findById(id);
             const {foto,...userToShow} = user;
             Logger.log(`> [Service][User V2][PUT][update][findById] - ${JSON.stringify(userToShow)}`);
 
@@ -531,11 +594,18 @@ export class UserV2Service {
             await this.userV2Repository.update(id, updatedData);
 
             // Retornar o estado atualizado do usuário
-            const updatedUser: UserV2Entity = await this.userV2Repository.findOneBy({ _id: id });
+            const updatedUser: UserV2Entity = await this.userV2Repository.findById(id);
+
+            // Atualizar CustomClaims do Firebase
+            for (const providerAuth of updatedUser.autenticacao.providersInfo) {
+                Logger.debug(`> [Service][User V2][GET][updatedUser] - Member ID: ${providerAuth.uid.toString() ?? "N/A"}, ROLE: ${updatedUser.role ?? "N/A"}, MONGOID: ${updatedUser._id ?? "N/A"}`);
+                await this.authService.setCustomClaimsForUser(providerAuth.uid, updatedUser.role, updatedUser._id);
+            }
+
             Logger.log(`> [Service][User V2][PUT][update][updatedUser] - ${JSON.stringify(updatedUser)}`);
             return updatedUser!;
         } catch (e) {
-            Logger.log(`> [Service][User V2][PUT][update] catch - ${JSON.stringify(e)}`);
+            Logger.log(`> [Service][User V2][PUT][update] catch - ${e.stack}`);
             if (e['message'].includes('E11000 duplicate key error collection')) {
                 throw new BadRequestException('Houve uma falha ao atualizar o membro, tente novamente.');
             }
