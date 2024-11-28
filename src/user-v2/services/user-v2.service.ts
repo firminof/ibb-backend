@@ -1,13 +1,13 @@
 import {BadRequestException, Injectable, Logger, NotFoundException} from "@nestjs/common";
 import * as process from "process";
 
-import {UserV2Entity} from "../domain/entity/user-v2.entity";
+import {HistoricoDto, UserV2Entity} from "../domain/entity/user-v2.entity";
 import {UserV2Repository} from "../repository/user-v2.repository";
 import {EmailService} from "../../user/service/email.service";
 import {AuthService} from "../../auth/services/auth.service";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {formatCPF, formatNome, formatTelefone} from "../../common/helpers/helpers";
-import {FirebaseProviderInfoV2, IMember} from "../domain/entity/abstractions/user-v2.abstraction";
+import {FirebaseProviderInfoV2, Historico, IMember} from "../domain/entity/abstractions/user-v2.abstraction";
 import {CreateUserV2Dto} from "../dto/create-user-v2.dto";
 import {EstadoCivilEnum, Providers, StatusEnum, UserRoles} from "../../user/domain/entity/abstractions/user";
 import {validateCPFLength} from "../../common/validations/cpf";
@@ -16,6 +16,8 @@ import {DeleteUserV2Dto} from "../dto/delete-user-v2.dto";
 import {SendEmailDto} from "../../user/dto/send-email.dto";
 import {InviteV2Repository} from "../repository/invite-v2.repository";
 import {InviteV2Entity} from "../domain/entity/invite-v2.entity";
+import {UpdateInfoDto} from "../../user/dto/update-info.dto";
+import {RequestUpdateV2Dto} from "../dto/request-update-v2.dto";
 
 @Injectable()
 export class UserV2Service {
@@ -29,7 +31,6 @@ export class UserV2Service {
     }
 
     async getAll(): Promise<UserV2Entity[]> {
-        Logger.log(`> `);
         Logger.log(`> [Service][User V2][GET][getAll] - init`);
         try {
             const allMembers: UserV2Entity[] = await this.userV2Repository.getAll();
@@ -47,7 +48,6 @@ export class UserV2Service {
     }
 
     async getAllDiaconos(): Promise<UserV2Entity[]> {
-        Logger.log(`> `);
         Logger.log(`> [Service][User V2][GET][getAllDiaconos] - init`);
         try {
             const allMembers: UserV2Entity[] = await this.userV2Repository.getAllDiaconos();
@@ -65,7 +65,6 @@ export class UserV2Service {
     }
 
     async getAllInvites(): Promise<InviteV2Entity[]> {
-        Logger.log(`> `);
         Logger.log(`> [Service][User V2][GET][getAllInvites] - init`);
 
         try {
@@ -121,7 +120,6 @@ export class UserV2Service {
     }
 
     async getAllByMemberIdRequested(id: string): Promise<InviteV2Entity[]> {
-        Logger.log(`> `);
         Logger.log(`> [Service][User V2][GET][getAllByMemberIdRequested] - init`);
 
         try {
@@ -177,7 +175,6 @@ export class UserV2Service {
     }
 
     async getAllBirthdaysMonth(month: number): Promise<UserV2Entity[]> {
-        Logger.log(`> `);
         Logger.log(`> [Service][User V2][GET][getAllBirthdaysMonth] - init`);
         try {
             const allMembers: UserV2Entity[] = await this.userV2Repository.getAll();
@@ -202,7 +199,6 @@ export class UserV2Service {
     }
 
     async getById(id: string): Promise<UserV2Entity> {
-        Logger.log(`> `);
         Logger.log(`> [Service][User V2][GET][getById] - init`);
         try {
             const user: UserV2Entity = await this.userV2Repository.findById(id);
@@ -213,7 +209,7 @@ export class UserV2Service {
             const {foto, ...userToShow} = user;
             Logger.log(`> [Service][User V2][GET][getById] - ${JSON.stringify(userToShow)}`);
 
-            const formatList: UserV2Entity[] = this.mapMemberList([user]);
+            const formatList: UserV2Entity[] = await this.mapMemberList([user]);
 
             return formatList[0];
         } catch (e) {
@@ -223,7 +219,6 @@ export class UserV2Service {
     }
 
     private async getInviteById(id: string): Promise<InviteV2Entity> {
-        Logger.log(`> `);
         Logger.log(`> [Service][User V2][GET][getInviteById] - init`);
         try {
             const invite: InviteV2Entity = await this.inviteV2Repository.findById(id);
@@ -241,7 +236,6 @@ export class UserV2Service {
     }
 
     async findByEmail(email: string): Promise<UserV2Entity> {
-        Logger.log(`> `);
         Logger.log(`> [Controller][User V2][GET][findByEmail] - init`);
         try {
             const user: UserV2Entity = await this.userV2Repository.findByEmail(email);
@@ -252,108 +246,151 @@ export class UserV2Service {
 
             }
 
-            const formatList: UserV2Entity[] = this.mapMemberList([user]);
+            const formatList: UserV2Entity[] = await this.mapMemberList([user]);
             return formatList[0];
         } catch (e) {
             throw new BadRequestException(e.message);
         }
     }
 
-    private mapMemberList(members: UserV2Entity[]): UserV2Entity[] {
-        return members.map((member: UserV2Entity) => {
-            // Ajustar informações de diacono do membro
-            member.diacono = {
-                nome: member && member.diacono && member.diacono.nome ? formatNome(member.diacono.nome) : '',
-                isDiacono: member && member.diacono && member.diacono.isDiacono ? member.diacono.isDiacono : false,
-                isMember: member && member.diacono && member.diacono.isMember ? member.diacono.isMember : false,
-                id: member && member.diacono && member.diacono.id ? member.diacono.id : ''
-            }
+    private async mapMemberList(members: UserV2Entity[]): Promise<UserV2Entity[]> {
+        return Promise.all(
+            members.map(async (member: UserV2Entity): Promise<UserV2Entity> => {
+                let diacono: IMember = {} as IMember;
 
-            const filhos: IMember[] = [];
-
-            // Ajustar informações de filhos
-            if (member && member.informacoesPessoais.filhos && member.informacoesPessoais.filhos.length > 0) {
-                member.informacoesPessoais.filhos.forEach((filho: IMember) => {
-                    filho.nome = filho && filho.nome ? formatNome(filho.nome) : '';
-
-                    filhos.push(filho);
-                })
-            }
-
-            member.informacoesPessoais.filhos = filhos;
-
-            // Ajustar informações de casamento (conjugue)
-            if (member.informacoesPessoais.casamento) {
-                member.informacoesPessoais.casamento.conjugue.nome = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
-                    formatNome(member.informacoesPessoais.casamento.conjugue.nome) : '';
-
-                member.informacoesPessoais.casamento.conjugue.id = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
-                    member.informacoesPessoais.casamento.conjugue.id : '';
-
-                member.informacoesPessoais.casamento.conjugue.isMember = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
-                    member.informacoesPessoais.casamento.conjugue.isMember : false;
-
-                member.informacoesPessoais.casamento.conjugue.isDiacono = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
-                    member.informacoesPessoais.casamento.conjugue.isDiacono : false;
-            } else {
-                member.informacoesPessoais.casamento = {
-                    conjugue: {
-                        id: "-1",
+                if (member && member.diacono && member.diacono.id) {
+                    const getDiaconoById: UserV2Entity = await this.userV2Repository.findById(member.diacono.id);
+                    diacono.nome = getDiaconoById.nome;
+                    diacono.isDiacono = getDiaconoById.isDiacono;
+                    diacono.isMember = true;
+                    diacono.id = member.diacono.id;
+                } else {
+                    diacono = {
+                        id: "",
                         isMember: false,
                         isDiacono: false,
                         nome: ""
-                    },
-                    dataCasamento: null
+                    }
                 }
-            }
 
-            // Ajustar informações de casamento (dataCasamento)
-            if (member.informacoesPessoais.casamento.dataCasamento) {
-                member.informacoesPessoais.casamento.dataCasamento = member.informacoesPessoais.casamento.dataCasamento ?
-                    member.informacoesPessoais.casamento.dataCasamento : null
-            }
+                let filhos: IMember[] = [];
+                if (member && member.informacoesPessoais && member.informacoesPessoais.filhos && member.informacoesPessoais.filhos.length > 0) {
+                    for (const filho of member.informacoesPessoais.filhos) {
+                        const getFilhoById: UserV2Entity = await this.userV2Repository.findById(filho.id);
 
-            const user: UserV2Entity = {
-                _id: member._id.toString(),
-                nome: formatNome(member.nome),
-                rg: member.rg,
-                role: member.role,
-                telefone: formatTelefone(member.telefone),
-                cpf: formatCPF(member.cpf),
-                email: member.email,
-                dataNascimento: member.dataNascimento,
-                idade: member.idade,
-                diacono: member.diacono,
-                endereco: member.endereco,
-                status: member.status,
-                ministerio: member.ministerio,
+                        if (getFilhoById) {
+                            filhos.push({
+                                id: filho.id,
+                                nome: getFilhoById.nome,
+                                isMember: true,
+                                isDiacono: getFilhoById.isDiacono
+                            })
+                        } else {
+                            filhos.push({
+                                id: filho.id,
+                                nome: filho.nome,
+                                isMember: false,
+                                isDiacono: filho.isDiacono
+                            })
+                        }
+                    }
+                }
 
-                informacoesPessoais: {
-                    casamento: member.informacoesPessoais.casamento,
-                    estadoCivil: member.informacoesPessoais.estadoCivil,
-                    filhos: member.informacoesPessoais.filhos,
-                    temFilhos: member.informacoesPessoais.temFilhos
-                },
+                // Ajustar informações de diacono do membro
+                // member.diacono = {
+                //     nome: member && member.diacono && member.diacono.nome ? formatNome(member.diacono.nome) : '',
+                //     isDiacono: member && member.diacono && member.diacono.isDiacono ? member.diacono.isDiacono : false,
+                //     isMember: member && member.diacono && member.diacono.isMember ? member.diacono.isMember : false,
+                //     id: member && member.diacono && member.diacono.id ? member.diacono.id : ''
+                // }
+                //
+                // const filhos: IMember[] = [];
+                //
+                // // Ajustar informações de filhos
+                // if (member && member.informacoesPessoais.filhos && member.informacoesPessoais.filhos.length > 0) {
+                //     member.informacoesPessoais.filhos.forEach((filho: IMember) => {
+                //         filho.nome = filho && filho.nome ? formatNome(filho.nome) : '';
+                //
+                //         filhos.push(filho);
+                //     })
+                // }
+                //
+                // member.informacoesPessoais.filhos = filhos;
 
-                exclusao: member.exclusao ? member.exclusao: {data: null, motivo: ''},
-                falecimento: member.falecimento ? member.falecimento : {data: null, motivo: '', local: ''},
-                ingresso: member.ingresso ? member.ingresso : {data: null, local: '', forma: ''},
-                transferencia: member.transferencia ? member.transferencia : {data: null, motivo: '', local: ''},
-                visitas: member.visitas ? member.visitas : {motivo: ''},
+                // Ajustar informações de casamento (conjugue)
+                if (member.informacoesPessoais.casamento) {
+                    const getConjugueById: UserV2Entity = await this.userV2Repository.findById(member.informacoesPessoais.casamento.conjugue.id);
+                    member.informacoesPessoais.casamento.conjugue.nome = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
+                        formatNome(getConjugueById.nome) : '';
 
-                autenticacao: member.autenticacao,
-                isDiacono: member.isDiacono,
-                createdAt: member.createdAt,
-                updatedAt: member.updatedAt,
-                foto: member.foto,
-            }
+                    member.informacoesPessoais.casamento.conjugue.id = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
+                        member.informacoesPessoais.casamento.conjugue.id : '';
 
-            return user;
-        })
+                    member.informacoesPessoais.casamento.conjugue.isMember = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
+                        member.informacoesPessoais.casamento.conjugue.isMember : false;
+
+                    member.informacoesPessoais.casamento.conjugue.isDiacono = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
+                        getConjugueById.isDiacono : false;
+                } else {
+                    member.informacoesPessoais.casamento = {
+                        conjugue: {
+                            id: "",
+                            isMember: false,
+                            isDiacono: false,
+                            nome: ""
+                        },
+                        dataCasamento: null
+                    }
+                }
+
+                // Ajustar informações de casamento (dataCasamento)
+                if (member.informacoesPessoais.casamento.dataCasamento) {
+                    member.informacoesPessoais.casamento.dataCasamento = member.informacoesPessoais.casamento.dataCasamento ?
+                        member.informacoesPessoais.casamento.dataCasamento : null
+                }
+
+                const user: UserV2Entity = {
+                    _id: member._id.toString(),
+                    nome: formatNome(member.nome),
+                    rg: member.rg,
+                    role: member.role,
+                    telefone: formatTelefone(member.telefone),
+                    cpf: formatCPF(member.cpf),
+                    email: member.email,
+                    dataNascimento: member.dataNascimento,
+                    idade: member.idade,
+                    diacono: diacono,
+                    endereco: member.endereco,
+                    status: member.status,
+                    ministerio: member.ministerio,
+
+                    informacoesPessoais: {
+                        casamento: member.informacoesPessoais.casamento,
+                        estadoCivil: member.informacoesPessoais.estadoCivil,
+                        filhos: filhos,
+                        temFilhos: member.informacoesPessoais.temFilhos
+                    },
+
+                    exclusao: member.exclusao ? member.exclusao : {data: null, motivo: ''},
+                    falecimento: member.falecimento ? member.falecimento : {data: null, motivo: '', local: ''},
+                    ingresso: member.ingresso ? member.ingresso : {data: null, local: '', forma: ''},
+                    transferencia: member.transferencia ? member.transferencia : {data: null, motivo: '', local: ''},
+                    visitas: member.visitas ? member.visitas : {motivo: ''},
+
+                    autenticacao: member.autenticacao,
+                    isDiacono: member.isDiacono,
+                    createdAt: member.createdAt,
+                    updatedAt: member.updatedAt,
+                    historico: member.historico.filter((historico: HistoricoDto) => historico.chave !== 'autenticacao'),
+                    foto: member.foto,
+                }
+
+                return user;
+            })
+        )
     }
 
     async create(data: CreateUserV2Dto) {
-        Logger.log(`> `);
         Logger.log(`> [Service][User V2][POST][Create] - init`);
 
         try {
@@ -384,7 +421,6 @@ export class UserV2Service {
     }
 
     async acceptInvite(inviteId: string, password: string, data: CreateUserV2Dto): Promise<UserV2Entity> {
-        Logger.log(`> `);
         Logger.log(`> [Service][User V2][POST][acceptInvite] - init`);
 
         try {
@@ -444,7 +480,6 @@ export class UserV2Service {
     }
 
     private async createUserUniversal(data: CreateUserV2Dto, password?: string): Promise<UserV2Entity> {
-        Logger.log(`> `);
         Logger.log(`> [Service][User V2][Post][createUserUniversal] - init`);
         Logger.log(`> [Service][User V2][Post][createUserUniversal] data - ${JSON.stringify(data)}`);
 
@@ -464,11 +499,37 @@ export class UserV2Service {
             validateCPFLength(data.cpf);
         }
 
+        let diacono: IMember = {} as IMember;
+
         if (data && data.diacono && data.diacono.id) {
             const getDiaconoById: UserV2Entity = await this.getById(data.diacono.id);
-            data.diacono.nome = getDiaconoById.nome;
-            data.diacono.isDiacono = getDiaconoById.isDiacono;
-            data.diacono.isMember = true;
+            diacono.nome = getDiaconoById.nome;
+            diacono.isDiacono = getDiaconoById.isDiacono;
+            diacono.isMember = true;
+            diacono.id = data.diacono.id;
+        }
+
+        let filhos: IMember[] = [];
+        if (data && data.informacoesPessoais && data.informacoesPessoais.filhos && data.informacoesPessoais.filhos.length > 0) {
+            for (const filho of data.informacoesPessoais.filhos) {
+                const getFilhoById: UserV2Entity = await this.getById(filho.id);
+
+                if (getFilhoById){
+                    filhos.push({
+                        id: filho.id,
+                        nome: getFilhoById.nome,
+                        isMember: true,
+                        isDiacono: getFilhoById.isDiacono
+                    })
+                } else {
+                    filhos.push({
+                        id: filho.id,
+                        nome: filho.nome,
+                        isMember: false,
+                        isDiacono: filho.isDiacono
+                    })
+                }
+            }
         }
 
         const user: UserV2Entity = new UserV2Entity();
@@ -480,7 +541,7 @@ export class UserV2Service {
         user.status = data.status;
         user.ministerio = data.ministerio;
         user.dataNascimento = data.dataNascimento;
-        user.diacono = data.diacono;
+        user.diacono = diacono;
         user.email = data.email;
         user.endereco = data.endereco;
         user.exclusao = {
@@ -498,7 +559,7 @@ export class UserV2Service {
                 dataCasamento: data.informacoesPessoais.casamento.dataCasamento
             },
             estadoCivil: data.informacoesPessoais.estadoCivil,
-            filhos: data.informacoesPessoais.filhos,
+            filhos: filhos,
             temFilhos: data.informacoesPessoais.temFilhos,
         };
         user.ingresso = {
@@ -515,10 +576,19 @@ export class UserV2Service {
             motivo: data.visitas.motivo
         }
 
-        user.foto = data.foto;
+        user.foto = data.foto ? data.foto : '';
         user.isDiacono = data.isDiacono;
+        user.historico = [{
+            chave: '',
+            antigo: 'SEM INFORMAÇÕES ANTERIORES',
+            novo: 'MEMBRO CRIADO',
+            updatedAt: new Date()
+        }];
+        user.autenticacao = {
+            providersInfo: []
+        };
 
-        const {foto,...userToShow} = user;
+        const {foto, ...userToShow} = user;
         Logger.debug(`> save member ${password ? 'aceitando convite' : ''}: `, JSON.stringify(userToShow));
 
         const saved: UserV2Entity = await this.userV2Repository.save(user);
@@ -560,27 +630,35 @@ export class UserV2Service {
         return saved;
     }
 
-    async update(id: string, data:any): Promise<UserV2Entity> {
-        Logger.log(`> `);
+    async update(id: string, data: any): Promise<UserV2Entity> {
         Logger.log(`> [Service][User V2][PUT][update] init`);
         Logger.log(`> [Service][User V2][PUT][update][id] - ${id}`);
-        Logger.log(`> [Service][User V2][PUT][update][data] - ${JSON.stringify(data)}`);
 
         try {
             const user: UserV2Entity = await this.userV2Repository.findById(id);
-            const {foto,...userToShow} = user;
+            const {foto, ...userToShow} = user;
             Logger.log(`> [Service][User V2][PUT][update][findById] - ${JSON.stringify(userToShow)}`);
 
             if (!user) {
                 throw new NotFoundException('Membro não encontrado!');
             }
 
+            const historico: Historico[] = [];
+
             // Filtrar apenas os campos que mudaram
             const updatedData = Object.keys(data).reduce((acc, key) => {
                 if (JSON.stringify(data[key]) !== JSON.stringify(user[key])) {
                     acc[key] = data[key];
+                    if (key !== 'autenticacao') {
+                        historico.push({
+                            chave: key,
+                            antigo: user[key],
+                            novo: data[key],
+                            updatedAt: new Date()
+                        })
+                    }
                 }
-                return acc;
+                return {...acc, updatedAt: new Date(), historico: [...historico, ...user.historico]};
             }, {});
 
             if (Object.keys(updatedData).length === 0) {
@@ -602,7 +680,7 @@ export class UserV2Service {
                 await this.authService.setCustomClaimsForUser(providerAuth.uid, updatedUser.role, updatedUser._id);
             }
 
-            Logger.log(`> [Service][User V2][PUT][update][updatedUser] - ${JSON.stringify(updatedUser)}`);
+            // Logger.log(`> [Service][User V2][PUT][update][updatedUser] - ${JSON.stringify(updatedUser)}`);
             return updatedUser!;
         } catch (e) {
             Logger.log(`> [Service][User V2][PUT][update] catch - ${e.stack}`);
@@ -614,9 +692,7 @@ export class UserV2Service {
     }
 
 
-
     async delete(param: DeleteUserV2Dto): Promise<boolean> {
-        Logger.log(`> `);
         Logger.log(`> [Service][User V2][DELETE] init`);
         try {
             const user: UserV2Entity = await this.userV2Repository.findById(param.id);
@@ -637,7 +713,6 @@ export class UserV2Service {
     }
 
     async deleteInvite(param: DeleteUserV2Dto): Promise<boolean> {
-        Logger.log(`> `);
         Logger.log(`> [Service][User V2][DELETE INVITE] init`);
         try {
             const invite: InviteV2Entity = await this.inviteV2Repository.findById(param.id);
@@ -656,8 +731,120 @@ export class UserV2Service {
         }
     }
 
+    async requestUpdate(data: RequestUpdateV2Dto): Promise<string> {
+        Logger.log(`> [Service][User V2][POST][requestUpdate] - init`);
+        try {
+            for (const id of data._id) {
+                Logger.debug(`> [Service][User V2][POST][requestUpdate] ID: ${id}`)
+                // Busca do usuário no repositório
+                const user: UserV2Entity = await this.userV2Repository.findById(id.toString());
+                if (!user) {
+                    Logger.warn(`Usuário com ID ${id} não encontrado.`);
+                    continue; // Pula para o próximo ID se o usuário não for encontrado
+                }
+
+                // Construção do link de atualização
+                // const linkAtualizacao: string = `${process.env.APPLICATION_URL_PROD}/member?id=${user._id.toString()}`;
+                const linkAtualizacao: string = `${process.env.APPLICATION_URL}/member?id=${user._id.toString()}`;
+
+                // Geração do HTML do e-mail
+                const html: string = this.generateUpdateEmailHtml(linkAtualizacao);
+
+                try {
+                    // Envio do e-mail
+                    const emailResponse = await this.emailService.sendEmail(
+                        user.email,
+                        'Atualize seus dados',
+                        'Realize a atualização de seus dados com a Igreja Batista do Brooklin',
+                        html
+                    );
+
+                    if (emailResponse.success) {
+                        Logger.log(`E-mail enviado com sucesso para ${user.email}`);
+                    } else {
+                        Logger.error(`Falha ao enviar e-mail para ${user.email}`);
+                    }
+                } catch (emailError) {
+                    Logger.error(
+                        `Erro ao enviar e-mail para ${user.email}: ${JSON.stringify(emailError)}`
+                    );
+                    throw new BadRequestException(
+                        `Erro ao enviar e-mail: ${emailError.message || emailError}`
+                    );
+                }
+            }
+
+            return 'Processo de envio de e-mails concluído!';
+        } catch (e) {
+            Logger.error(`Erro no processo de atualização: ${JSON.stringify(e)}`);
+            throw new BadRequestException(e.message || 'Erro inesperado ao atualizar dados.');
+        }
+    }
+
+    /**
+     * Gera o HTML do e-mail de atualização cadastral.
+     * @param linkAtualizacao Link para a atualização cadastral
+     * @returns HTML formatado
+     */
+    private generateUpdateEmailHtml(linkAtualizacao: string): string {
+        return `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atualize seu Cadastro</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center" style="background-color: #f8f8f8; padding: 20px;">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; padding: 20px; border-radius: 10px;">
+                    <tr>
+                        <td align="center">
+                            <h1 style="color: #333333;">🔄 Atualização Cadastral</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center">
+                            <img src="http://cdn.mcauto-images-production.sendgrid.net/9b153d64518b45c6/8ec43570-853b-496f-9111-76bc28cdae49/1600x673.jpeg" alt="Imagem de Boas-Vindas" style="max-width: 100%; height: auto; border-radius: 10px;">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 20px; text-align: left;">
+                            <p>Olá,</p>
+                            <p>Estamos realizando uma atualização de cadastro em nossa plataforma para garantir que todas as informações estejam corretas e atualizadas.</p>
+                            <h3>Por que atualizar seu cadastro?</h3>
+                            <ul>
+                                <li>Facilitar a comunicação com a nossa equipe</li>
+                                <li>Garantir acesso a todas as funcionalidades da plataforma</li>
+                            </ul>
+                            <p>Para realizar a atualização, basta clicar no botão abaixo e preencher as informações solicitadas. É rápido e simples!</p>
+                            <p><b>Se já estiver conectado na plataforma, o link irá direto a tela de edição. Senão deverá se autenticar e clicar em "EDITAR" em seu perfil!</b></p>
+                            <p style="text-align: center;">
+                                <a href="${linkAtualizacao}" style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Atualizar Cadastro</a>
+                            </p>
+                            <p>Se precisar de ajuda, nossa equipe está à disposição para auxiliá-lo.</p>
+                            <p>Atenciosamente,</p>
+                            <p><strong>Igreja Batista do Brooklin</strong></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" style="padding: 20px; font-size: 12px; color: #666;">
+                            <p>Se você já atualizou seu cadastro recentemente, por favor, desconsidere este e-mail.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+    `;
+    }
+
     async sendInvite(data: SendEmailDto): Promise<string> {
-        Logger.log(`> `);
+        
         Logger.log(`> [Service][User V2][POST][sendInvite] - init`);
 
         if (data.phone.length > 0 && data.phone !== 'string') {

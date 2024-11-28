@@ -50,6 +50,13 @@ export interface IMember {
     isDiacono: boolean;
 }
 
+export interface Historico {
+    chave: string;
+    antigo: string;
+    novo: string;
+    updatedAt: Date;
+}
+
 export interface UserV2 {
     // Identificação na base de dados
     _id?: string;
@@ -126,4 +133,7 @@ export interface UserV2 {
 
     // Membro é diacono
     isDiacono: boolean;
+
+    // Historico de atualizações do usuário
+    historico: Historico[];
 }

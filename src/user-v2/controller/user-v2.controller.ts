@@ -9,6 +9,7 @@ import {DeleteUserDto} from "../../user/dto/delete-user.dto";
 import {DeleteUserV2Dto} from "../dto/delete-user-v2.dto";
 import {SendEmailDto} from "../../user/dto/send-email.dto";
 import {InviteV2Entity} from "../domain/entity/invite-v2.entity";
+import {RequestUpdateV2Dto} from "../dto/request-update-v2.dto";
 
 @Controller('v2/user')
 @ApiTags('User V2')
@@ -164,5 +165,14 @@ export class UserV2Controller {
         Logger.log(``);
         Logger.log(`> [Controller][User V2][POST][Accept Invite] - init`);
         return this.userV2Service.acceptInvite(inviteId, password, data);
+    }
+
+    @Post('request-update')
+    @HttpCode(HttpStatus.CREATED)
+    @ApiResponse({status: HttpStatus.CREATED})
+    async requestUpdate(@Body() data: RequestUpdateV2Dto) {
+        Logger.log(``);
+        Logger.log(`> [Controller][User V2][POST][requestUpdate] - init`);
+        return this.userV2Service.requestUpdate(data);
     }
 }

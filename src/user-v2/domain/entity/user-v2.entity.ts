@@ -89,6 +89,20 @@ export class AutenticacaoDto {
     providersInfo: FirebaseProviderInfoV2[];
 }
 
+export class HistoricoDto {
+    @ApiProperty({ description: "Chave que identifica qual campo alterou", example: 'nome' })
+    chave: string;
+
+    @ApiProperty({ description: "Valor antigo", example: 'João' })
+    antigo: string;
+
+    @ApiProperty({ description: "Valor antigo", example: 'João Silva' })
+    novo: string;
+
+    @UpdateDateColumn()
+    updatedAt: Date;
+}
+
 @Entity()
 export class UserV2Entity implements UserV2 {
     // Identificação na base de dados
@@ -234,4 +248,8 @@ export class UserV2Entity implements UserV2 {
 
     @UpdateDateColumn()
     updatedAt: Date;
+
+    @Column()
+    @ApiProperty({type: HistoricoDto})
+    historico: HistoricoDto[];
 }
