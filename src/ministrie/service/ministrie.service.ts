@@ -1,4 +1,4 @@
-import {BadRequestException, Injectable, Logger, NotFoundException} from "@nestjs/common";
+import {BadRequestException, Injectable, Logger, NotFoundException, Param} from "@nestjs/common";
 import {MinisterioCategoriasEnum, MinistrieEntity} from "../domain/entity/ministrie.entity";
 import {MinistrieRepository} from "../repository/ministrie.repository";
 import {CreateMinistrieDto} from "../dto/create-ministrie.dto";
@@ -28,6 +28,18 @@ export class MinistrieService {
             }));
         } catch (error) {
             Logger.error('[Service][Ministrie][GET][getAll] - Error fetching ministries', error.stack);
+            throw new BadRequestException(error.message || 'Erro ao buscar ministérios');
+        }
+    }
+
+    async getById(@Param('id') id: string): Promise<MinistrieEntity> {
+        Logger.log('[Service][Ministrie][GET][getById] - Fetching 1 ministrie');
+
+        try {
+            return await this.ministrieRepository.findById(id);
+
+        } catch (error) {
+            Logger.error('[Service][Ministrie][GET][getById] - Error fetching ministries', error.stack);
             throw new BadRequestException(error.message || 'Erro ao buscar ministérios');
         }
     }

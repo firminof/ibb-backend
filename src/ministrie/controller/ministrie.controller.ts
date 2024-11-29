@@ -28,6 +28,19 @@ export class MinistrieController {
         return this.ministrieService.getAll();
     }
 
+    @Get('get-by-id/:id')
+    @HttpCode(HttpStatus.OK)
+    @ApiResponse({
+        status: HttpStatus.OK,
+        type: MinistrieEntity,
+        isArray: false
+    })
+    async getById(@Param('id') id: string): Promise<MinistrieEntity> {
+        Logger.log(``);
+        Logger.log(`> [Controller][Ministrie][GET][getById] - init`);
+        return this.ministrieService.getById(id);
+    }
+
     @Post()
     @HttpCode(HttpStatus.CREATED)
     @ApiResponse({status: HttpStatus.CREATED})

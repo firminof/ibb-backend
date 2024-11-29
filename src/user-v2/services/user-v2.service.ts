@@ -319,18 +319,34 @@ export class UserV2Service {
 
                 // Ajustar informações de casamento (conjugue)
                 if (member.informacoesPessoais.casamento) {
-                    const getConjugueById: UserV2Entity = await this.userV2Repository.findById(member.informacoesPessoais.casamento.conjugue.id);
-                    member.informacoesPessoais.casamento.conjugue.nome = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
-                        formatNome(getConjugueById.nome) : '';
+                    if (member.informacoesPessoais.casamento.conjugue.id.length === 24){
+                        const getConjugueById: UserV2Entity = await this.userV2Repository.findById(member.informacoesPessoais.casamento.conjugue.id);
 
-                    member.informacoesPessoais.casamento.conjugue.id = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
-                        member.informacoesPessoais.casamento.conjugue.id : '';
+                        member.informacoesPessoais.casamento.conjugue.nome = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
+                            formatNome(getConjugueById.nome) : '';
 
-                    member.informacoesPessoais.casamento.conjugue.isMember = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
-                        member.informacoesPessoais.casamento.conjugue.isMember : false;
+                        member.informacoesPessoais.casamento.conjugue.id = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
+                            member.informacoesPessoais.casamento.conjugue.id : '';
 
-                    member.informacoesPessoais.casamento.conjugue.isDiacono = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
-                        getConjugueById.isDiacono : false;
+                        member.informacoesPessoais.casamento.conjugue.isMember = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
+                            member.informacoesPessoais.casamento.conjugue.isMember : false;
+
+                        member.informacoesPessoais.casamento.conjugue.isDiacono = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
+                            getConjugueById.isDiacono : false;
+                    } else {
+                        member.informacoesPessoais.casamento.conjugue.nome = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
+                            member.informacoesPessoais.casamento.conjugue.nome : '';
+
+                        member.informacoesPessoais.casamento.conjugue.id = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
+                            member.informacoesPessoais.casamento.conjugue.id : '';
+
+                        member.informacoesPessoais.casamento.conjugue.isMember = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
+                            member.informacoesPessoais.casamento.conjugue.isMember : false;
+
+                        member.informacoesPessoais.casamento.conjugue.isDiacono = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
+                            member.informacoesPessoais.casamento.conjugue.isDiacono : false;
+                    }
+
                 } else {
                     member.informacoesPessoais.casamento = {
                         conjugue: {
