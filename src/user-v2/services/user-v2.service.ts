@@ -760,8 +760,7 @@ export class UserV2Service {
                 }
 
                 // Construção do link de atualização
-                // const linkAtualizacao: string = `${process.env.APPLICATION_URL_PROD}/member?id=${user._id.toString()}`;
-                const linkAtualizacao: string = `${process.env.APPLICATION_URL}/member?id=${user._id.toString()}`;
+                const linkAtualizacao: string = `${process.env.APPLICATION_URL_PROD}/member?id=${user._id.toString()}`;
 
                 // Geração do HTML do e-mail
                 const html: string = this.generateUpdateEmailHtml(linkAtualizacao);

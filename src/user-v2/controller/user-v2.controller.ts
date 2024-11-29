@@ -10,12 +10,16 @@ import {DeleteUserV2Dto} from "../dto/delete-user-v2.dto";
 import {SendEmailDto} from "../../user/dto/send-email.dto";
 import {InviteV2Entity} from "../domain/entity/invite-v2.entity";
 import {RequestUpdateV2Dto} from "../dto/request-update-v2.dto";
+import {TwilioWhatsappInputDto} from "../../common/dto/twillio-whatsapp.dto";
+import {TwilioMessagingService} from "../../common/services/twilio-messaging.service";
 
 @Controller('v2/user')
 @ApiTags('User V2')
 
 export class UserV2Controller {
-    constructor(private readonly userV2Service: UserV2Service) {
+    constructor(
+        private readonly userV2Service: UserV2Service,
+        private readonly twilioMessagingService: TwilioMessagingService) {
     }
 
     @Get('all')
@@ -174,5 +178,26 @@ export class UserV2Controller {
         Logger.log(``);
         Logger.log(`> [Controller][User V2][POST][requestUpdate] - init`);
         return this.userV2Service.requestUpdate(data);
+    }
+
+    @Post('/whatsapp/send-message')
+    @HttpCode(HttpStatus.OK)
+    @ApiResponse({status: HttpStatus.OK})
+    async sendWhatsappMessage(@Body() data: TwilioWhatsappInputDto) {
+        Logger.log(``);
+        Logger.log(`> [Controller][User V2][POST][sendWhatsappMessage] - init`);
+        Logger.log(`> [Controller][User V2][POST][sendWhatsappMessage] data - ${JSON.stringify(data)}`);
+        return this.twilioMessagingService.sendWhatsappMessageWithTwilio(data);
+    }
+
+    @Post('/whatsapp/send-message/pedir-oracao/:membro')
+    @HttpCode(HttpStatus.OK)
+    @ApiResponse({status: HttpStatus.OK})
+    async sendWhatsappMessagePedirOracao(@Param('membro') membro: string, @Body() data: TwilioWhatsappInputDto) {
+        Logger.log(``);
+        Logger.log(`> [Controller][User V2][POST][sendWhatsappMessage] - init`);
+        Logger.log(`> [Controller][User V2][POST][sendWhatsappMessage] data - ${JSON.stringify(data)}`);
+        Logger.log(`> [Controller][User V2][POST][sendWhatsappMessage] membro - ${JSON.stringify(membro)}`);
+        return this.twilioMessagingService.sendWhatsappMessagePedirOracaoWithTwilio(data, membro);
     }
 }

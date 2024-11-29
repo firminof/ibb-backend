@@ -86,6 +86,76 @@ _Esta mensagem foi enviada automaticamente, não responda._
         }
     }
 
+    @OnEvent('twillio-whatsapp.send')
+    async sendWhatsappMessagePedirOracaoWithTwilio(input: TwilioWhatsappInputDto, membro: string) {
+        let tentativas: number = 0;
+
+        try {
+            /*
+            *Mensagem enviada pela Igreja Batista Do Brooklin*
+
+Olá {{1}},
+
+o membro {{2}} está *pedindo oração.*
+Veja a mensagem que ele escreveu:
+
+{{3}}
+
+_Esta mensagem foi enviada automaticamente, não responda._
+             */
+            const treatedRecipient = formatToInternationalStandard(
+                input.numeroWhatsapp,
+            );
+
+            Logger.log(``);
+            Logger.log(`> [Service][Twillio][WhatsApp] de: ${sender}`);
+            Logger.log(`> [Service][Twillio][WhatsApp] para: ${treatedRecipient}`);
+            Logger.log(`> [Service][Twillio][WhatsApp] nome: ${input.nomeMembro}`);
+            Logger.log(`> [Service][Twillio][WhatsApp] membro: ${membro}`);
+
+            const message = await client.messages.create({
+                contentSid: process.env.TWILIO_CONTENT_SID_PEDIR_ORACAO,
+                messagingServiceSid: process.env.TWILIO_MESSAGE_SERVICE_SID,
+                from: `whatsapp:${sender}`,
+                contentVariables: JSON.stringify({
+                    1: input.nomeMembro,
+                    2: membro,
+                    3: input.conteudoMensagem
+                }),
+                to: `whatsapp:${treatedRecipient}`,
+            });
+
+            await new Promise((resolve) => setTimeout(resolve, 3000));
+
+            let whatsAppStatusMessage: string = '';
+
+            // Verificar o status da mensagem
+            const checkMessage: MessageInstance = await client.messages(message.sid).fetch();
+
+            whatsAppStatusMessage = WhatsappMessageStatus[checkMessage.status.toUpperCase()];
+            Logger.log('[Service][Twillio][WhatsApp] - messageStatus: ', whatsAppStatusMessage);
+
+            if (tentativas <= 8 && whatsAppStatusMessage.toString().includes('UNDELIVERED')) {
+                Logger.log('[Service][Twillio][WhatsApp] - reenviar mensagem');
+                tentativas += 1;
+                setTimeout(() => this.sendWhatsappMessageWithTwilio(input), 25000);
+                if (tentativas > 8) {
+                    throw new BadRequestException(
+                        `Mensagem não entregue!`,
+                    );
+                }
+            }
+
+            return whatsAppStatusMessage;
+
+        } catch (e) {
+            Logger.log(`> [Service][Twillio][WhatsApp] catch: ${e['message']}`);
+            throw new BadRequestException(
+                `Erro ao enviar menssagem de whatsapp com Twilio: ${e.message}`,
+            );
+        }
+    }
+
     @OnEvent('twillio-whatsapp.forget-password.send')
     async sendWhatsappMessageForgetPasswordWithTwilio(data: { link: string, numeroWhatsapp: string }) {
         try {
