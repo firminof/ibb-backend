@@ -7,10 +7,11 @@ import {CreateUserValidation} from "./service/create-user-validation";
 import {EmailService} from "./service/email.service";
 import {AuthService} from "../auth/services/auth.service";
 import {TwilioMessagingService} from "../common/services/twilio-messaging.service";
+import {UserV2Repository} from "../user-v2/repository/user-v2.repository";
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([UserRepository]),
+        TypeOrmModule.forFeature([UserRepository, UserV2Repository]),
     ],
     controllers: [UserController],
     providers: [

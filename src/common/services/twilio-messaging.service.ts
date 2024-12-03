@@ -205,7 +205,7 @@ Clique no link abaixo para mudar a senha.
         }
     }
 
-    @OnEvent('twillio-whatsapp.send-invite.send')
+    @OnEvent('twillio-whatsapp.send-invite.send', {async: true})
     async sendWhatsappMessageSendInviteWithTwilio(data: { numeroWhatsapp: string, linkConvite: string }) {
         try {
             /*

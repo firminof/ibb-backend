@@ -132,7 +132,7 @@ export class UserV2Service {
                 return allInvites.map((item: InviteV2Entity) => ({
                     _id: item?._id?.toString(),
                     memberIdRequested: item.memberIdRequested,
-                    to: item.to,
+                    to: item && item.to && item.to !== '' ? item.to : item.phone,
                     phone: item.phone,
                     isAccepted: item.isAccepted,
                     requestName: item.requestName, // Mantém o valor original,
@@ -273,50 +273,6 @@ export class UserV2Service {
                     }
                 }
 
-                let filhos: IMember[] = [];
-                if (member && member.informacoesPessoais && member.informacoesPessoais.filhos && member.informacoesPessoais.filhos.length > 0) {
-                    for (const filho of member.informacoesPessoais.filhos) {
-                        const getFilhoById: UserV2Entity = await this.userV2Repository.findById(filho.id);
-
-                        if (getFilhoById) {
-                            filhos.push({
-                                id: filho.id,
-                                nome: getFilhoById.nome,
-                                isMember: true,
-                                isDiacono: getFilhoById.isDiacono
-                            })
-                        } else {
-                            filhos.push({
-                                id: filho.id,
-                                nome: filho.nome,
-                                isMember: false,
-                                isDiacono: filho.isDiacono
-                            })
-                        }
-                    }
-                }
-
-                // Ajustar informações de diacono do membro
-                // member.diacono = {
-                //     nome: member && member.diacono && member.diacono.nome ? formatNome(member.diacono.nome) : '',
-                //     isDiacono: member && member.diacono && member.diacono.isDiacono ? member.diacono.isDiacono : false,
-                //     isMember: member && member.diacono && member.diacono.isMember ? member.diacono.isMember : false,
-                //     id: member && member.diacono && member.diacono.id ? member.diacono.id : ''
-                // }
-                //
-                // const filhos: IMember[] = [];
-                //
-                // // Ajustar informações de filhos
-                // if (member && member.informacoesPessoais.filhos && member.informacoesPessoais.filhos.length > 0) {
-                //     member.informacoesPessoais.filhos.forEach((filho: IMember) => {
-                //         filho.nome = filho && filho.nome ? formatNome(filho.nome) : '';
-                //
-                //         filhos.push(filho);
-                //     })
-                // }
-                //
-                // member.informacoesPessoais.filhos = filhos;
-
                 // Ajustar informações de casamento (conjugue)
                 if (member.informacoesPessoais.casamento) {
                     if (member.informacoesPessoais.casamento.conjugue.id.length === 24){
@@ -383,7 +339,7 @@ export class UserV2Service {
                     informacoesPessoais: {
                         casamento: member.informacoesPessoais.casamento,
                         estadoCivil: member.informacoesPessoais.estadoCivil,
-                        filhos: filhos,
+                        filhos: member.informacoesPessoais.filhos,
                         temFilhos: member.informacoesPessoais.temFilhos
                     },
 
@@ -429,6 +385,7 @@ export class UserV2Service {
         } catch (e) {
             Logger.log(`> [Service][User V2][POST][Create] catch - ${JSON.stringify(e)}`);
             if (e['response']['message'].toString().includes('There is no user record corresponding to the provided identifier')) {
+                Logger.log('Criando membro pela primeira vez dentro do catch')
                 return await this.createUserUniversal(data);
             }
 
@@ -525,29 +482,6 @@ export class UserV2Service {
             diacono.id = data.diacono.id;
         }
 
-        let filhos: IMember[] = [];
-        if (data && data.informacoesPessoais && data.informacoesPessoais.filhos && data.informacoesPessoais.filhos.length > 0) {
-            for (const filho of data.informacoesPessoais.filhos) {
-                const getFilhoById: UserV2Entity = await this.getById(filho.id);
-
-                if (getFilhoById){
-                    filhos.push({
-                        id: filho.id,
-                        nome: getFilhoById.nome,
-                        isMember: true,
-                        isDiacono: getFilhoById.isDiacono
-                    })
-                } else {
-                    filhos.push({
-                        id: filho.id,
-                        nome: filho.nome,
-                        isMember: false,
-                        isDiacono: filho.isDiacono
-                    })
-                }
-            }
-        }
-
         const user: UserV2Entity = new UserV2Entity();
         user.cpf = data.cpf;
         user.nome = data.nome;
@@ -575,7 +509,7 @@ export class UserV2Service {
                 dataCasamento: data.informacoesPessoais.casamento.dataCasamento
             },
             estadoCivil: data.informacoesPessoais.estadoCivil,
-            filhos: filhos,
+            filhos: data.informacoesPessoais.filhos,
             temFilhos: data.informacoesPessoais.temFilhos,
         };
         user.ingresso = {
@@ -623,15 +557,16 @@ export class UserV2Service {
             try {
                 const userFirebase = await this.authService.registerUser(savedFirebase, password);
 
-                await this.update(saved._id, {
-                    ...saved,
-                    autenticacao: {
-                        providersInfo: [{
-                            providerId: Providers.password,
-                            uid: userFirebase.uid
-                        }]
-                    }
-                })
+               setTimeout(async () => {
+                   await this.update(saved._id, {
+                       autenticacao: {
+                           providersInfo: [{
+                               providerId: Providers.password,
+                               uid: userFirebase.uid
+                           }]
+                       }
+                   })
+               }, 1500);
             } catch (e) {
                 await this.userV2Repository.delete(saved._id);
                 throw new BadRequestException(
@@ -858,8 +793,8 @@ export class UserV2Service {
     `;
     }
 
+    inviteSented: boolean = false;
     async sendInvite(data: SendEmailDto): Promise<string> {
-        
         Logger.log(`> [Service][User V2][POST][sendInvite] - init`);
 
         if (data.phone.length > 0 && data.phone !== 'string') {
@@ -878,11 +813,20 @@ export class UserV2Service {
             const linkConvite: string = `${process.env.APPLICATION_URL_PROD}/invite?id=${savedInvite._id.toString()}`;
 
 
-            this.eventEmitter.emit('twillio-whatsapp.send-invite.send', {
-                email: data.to,
-                numeroWhatsapp: data.phone,
-                linkConvite
-            })
+            if (!this.inviteSented){
+                const enviarConvite: boolean = this.eventEmitter.emit('twillio-whatsapp.send-invite.send', {
+                    email: data.to,
+                    numeroWhatsapp: data.phone,
+                    linkConvite
+                })
+                this.inviteSented = true;
+
+                if (enviarConvite) {
+                    return 'Convite enviado por WhatsApp!'
+                }
+
+                throw new BadRequestException('Falha no envio do convite por WhatsApp, tente novamente!')
+            }
             return 'Convite enviado por WhatsApp!'
         }
 
