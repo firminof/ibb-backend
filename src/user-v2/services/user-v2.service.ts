@@ -442,9 +442,8 @@ export class UserV2Service {
 
                     Logger.log(`> [Service][User V2][POST][acceptInvite] - finished 2`);
                     return;
-                } else {
-                    throw new BadRequestException('Falha ao aceitar o convite, o mesmo pode ter sido removido!');
                 }
+                throw new BadRequestException('Convite já aceito!');
             }
 
             throw new BadRequestException('Falha ao aceitar o convite, o mesmo pode ter sido removido!');
