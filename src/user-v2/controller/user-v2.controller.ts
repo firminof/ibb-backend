@@ -159,15 +159,16 @@ export class UserV2Controller {
         return this.userV2Service.sendInvite(sendEmailDto);
     }
 
-    @Post('accept-invite/:inviteId/:password')
+    @Post('accept-invite/:password/:inviteId')
     @HttpCode(HttpStatus.CREATED)
     @ApiResponse({status: HttpStatus.CREATED})
     async acceptInvite(
-        @Param('inviteId') inviteId: string,
         @Param('password') password: string,
+        @Param('inviteId') inviteId: string,
         @Body() data: CreateUserV2Dto): Promise<UserV2Entity> {
         Logger.log(``);
         Logger.log(`> [Controller][User V2][POST][Accept Invite] - init`);
+        Logger.debug(`> ${inviteId}`);
         return this.userV2Service.acceptInvite(inviteId, password, data);
     }
 

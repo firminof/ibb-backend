@@ -143,7 +143,10 @@ export class AuthService {
         try {
             returnData = await auth.getUserByEmail(email);
         } catch (error) {
-            console.log(error);
+            console.log(JSON.stringify(error));
+            if (error.errorInfo.message.toString().includes('There is no user record corresponding to the provided identifier')) {
+                throw new BadRequestException(`Membro não cadastrado, solicite um convite para fazer parte da nossa comunidade`);
+            }
             throw new BadRequestException(`Erro inesperado: ${error.errorInfo.message}`);
         }
 

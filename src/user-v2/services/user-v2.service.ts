@@ -18,6 +18,7 @@ import {InviteV2Repository} from "../repository/invite-v2.repository";
 import {InviteV2Entity} from "../domain/entity/invite-v2.entity";
 import {UpdateInfoDto} from "../../user/dto/update-info.dto";
 import {RequestUpdateV2Dto} from "../dto/request-update-v2.dto";
+import {TwilioMessagingService} from "../../common/services/twilio-messaging.service";
 
 @Injectable()
 export class UserV2Service {
@@ -26,7 +27,8 @@ export class UserV2Service {
         private readonly emailService: EmailService,
         private readonly authService: AuthService,
         private readonly eventEmitter: EventEmitter2,
-        private readonly inviteV2Repository: InviteV2Repository
+        private readonly inviteV2Repository: InviteV2Repository,
+        private readonly twilioMessagingService: TwilioMessagingService
     ) {
     }
 
@@ -401,9 +403,6 @@ export class UserV2Service {
 
             const userFirebase = await this.authService.findUserByEmail(data.email);
 
-            Logger.log(`> [Service][User V2][Post][POST][acceptInvite] user - ${JSON.stringify(user)}`);
-            Logger.log(`> [Service][User V2][Post][POST][acceptInvite] userFirebase - ${JSON.stringify(userFirebase)}`);
-
             if (user) {
                 throw new BadRequestException('Email já em uso!');
             }
@@ -432,7 +431,7 @@ export class UserV2Service {
             if (e['response']['message'].toString().includes('There is no user record corresponding to the provided identifier')) {
                 const invite: InviteV2Entity = await this.inviteV2Repository.findById(inviteId);
 
-                if (!invite.isAccepted) {
+                if (invite && !invite.isAccepted) {
                     // crio o usuário mais desse vez mandando a senha de criação
                     await this.createUserUniversal(data, password);
 
@@ -444,11 +443,11 @@ export class UserV2Service {
                     Logger.log(`> [Service][User V2][POST][acceptInvite] - finished 2`);
                     return;
                 } else {
-                    throw new BadRequestException('Convite aceito anteriormente!');
+                    throw new BadRequestException('Falha ao aceitar o convite, o mesmo pode ter sido removido!');
                 }
             }
 
-            throw new BadRequestException(e['message']);
+            throw new BadRequestException('Falha ao aceitar o convite, o mesmo pode ter sido removido!');
         }
     }
 
@@ -793,7 +792,6 @@ export class UserV2Service {
     `;
     }
 
-    inviteSented: boolean = false;
     async sendInvite(data: SendEmailDto): Promise<string> {
         Logger.log(`> [Service][User V2][POST][sendInvite] - init`);
 
@@ -812,21 +810,11 @@ export class UserV2Service {
             Logger.log(`Convite criado (whatsapp): ${JSON.stringify(savedInvite)}`);
             const linkConvite: string = `${process.env.APPLICATION_URL_PROD}/invite?id=${savedInvite._id.toString()}`;
 
+            await this.twilioMessagingService.sendWhatsappMessageSendInviteWithTwilio({
+                numeroWhatsapp: data.phone,
+                linkConvite
+            })
 
-            if (!this.inviteSented){
-                const enviarConvite: boolean = this.eventEmitter.emit('twillio-whatsapp.send-invite.send', {
-                    email: data.to,
-                    numeroWhatsapp: data.phone,
-                    linkConvite
-                })
-                this.inviteSented = true;
-
-                if (enviarConvite) {
-                    return 'Convite enviado por WhatsApp!'
-                }
-
-                throw new BadRequestException('Falha no envio do convite por WhatsApp, tente novamente!')
-            }
             return 'Convite enviado por WhatsApp!'
         }
 
