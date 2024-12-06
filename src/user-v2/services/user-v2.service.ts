@@ -176,6 +176,68 @@ export class UserV2Service {
         }
     }
 
+    async getInviteInfo(id: string): Promise<InviteV2Entity> {
+        Logger.log(`> [Service][User V2][GET][getInviteInfo] - init`);
+
+        try {
+            const invite: InviteV2Entity = await this.inviteV2Repository.findById(id);
+            if (!invite)
+                throw new NotFoundException('Nenhum convite encontrado na base de dados!');
+
+            const allMembers: UserV2Entity[] = await this.userV2Repository.getAll();
+
+            if (allMembers.length === 0) {
+                Logger.warn("> [Service][User V2][GET][getInviteInfo] - Nenhum membro encontrado.");
+                const mappedInvite: InviteV2Entity[] = [invite].map((item: InviteV2Entity) => ({
+                    _id: item?._id?.toString(),
+                    memberIdRequested: item.memberIdRequested,
+                    to: item && item.to && item.to !== '' ? item.to : item.phone,
+                    phone: item.phone,
+                    isAccepted: item.isAccepted,
+                    requestName: item.requestName, // Mantém o valor original,
+                    createdAt: item.createdAt,
+                    updatedAt: item.updatedAt,
+                }));
+
+                return mappedInvite[0];
+            }
+
+            // Criando um mapa para busca otimizada
+            const memberMap: Map<string, UserV2Entity> = new Map(allMembers.map((member: UserV2Entity) => [member._id.toString(), member]));
+
+            const mappedInvite: InviteV2Entity[] = [invite].map((item: InviteV2Entity) => {
+                const correspondingMember: UserV2Entity = memberMap.get(item.memberIdRequested?.toString());
+
+                Logger.debug(`> [Service][User V2][GET][getInviteInfo] - Invite ID: ${item._id}, Member ID: ${correspondingMember?._id?.toString()}, Member Found: ${correspondingMember?.nome ?? "N/A"}`);
+
+                return {
+                    _id: item._id.toString(),
+                    memberIdRequested: item.memberIdRequested,
+                    to: item.to,
+                    phone: item.phone,
+                    isAccepted: item.isAccepted,
+                    createdAt: item.createdAt,
+                    updatedAt: item.updatedAt,
+                    requestName: correspondingMember ? correspondingMember.nome : item.requestName,
+                };
+            });
+
+            return mappedInvite[0];
+
+        } catch (e) {
+            Logger.error(`> [Service][User V2][GET][getInviteInfo] catch - ${e.stack}`);
+
+            if (e['message'] === 'No metadata for "InviteV2Entity" was found.') {
+                throw new BadRequestException('Nenhum item encontrado na base de dados!');
+            }
+            if (e['message'] === 'Cannot read properties of undefined (reading \'_id\')') {
+                throw new BadRequestException('Identificação do membro que enviou o convite está incorreto!');
+            }
+            throw new BadRequestException(e['message']);
+        }
+    }
+
+
     async getAllBirthdaysMonth(month: number): Promise<UserV2Entity[]> {
         Logger.log(`> [Service][User V2][GET][getAllBirthdaysMonth] - init`);
         try {
@@ -420,6 +482,7 @@ export class UserV2Service {
                 // atualiza convite para aceito
                 await this.inviteV2Repository.update(inviteId, {
                     isAccepted: true,
+                    updatedAt: new Date()
                 })
 
                 Logger.log(`> [Service][User V2][POST][acceptInvite] - finished 1`);
@@ -438,6 +501,7 @@ export class UserV2Service {
                     // atualiza convite para aceito
                     await this.inviteV2Repository.update(inviteId, {
                         isAccepted: true,
+                        updatedAt: new Date()
                     })
 
                     Logger.log(`> [Service][User V2][POST][acceptInvite] - finished 2`);

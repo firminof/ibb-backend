@@ -75,6 +75,19 @@ export class UserV2Controller {
         return this.userV2Service.getAllByMemberIdRequested(id);
     }
 
+    @Get('invite/info/:id')
+    @HttpCode(HttpStatus.OK)
+    @ApiResponse({
+        status: HttpStatus.OK,
+        type: InviteV2Entity,
+        isArray: true
+    })
+    async getInviteInfo(@Param('id') id: string): Promise<InviteV2Entity> {
+        Logger.log(``);
+        Logger.log(`> [Controller][User V2][GET][getInviteInfo] - init`);
+        return this.userV2Service.getInviteInfo(id);
+    }
+
     @Get('birthdays-month/:month')
     @HttpCode(HttpStatus.OK)
     @ApiResponse({
