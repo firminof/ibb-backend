@@ -339,7 +339,7 @@ export class UserV2Service {
 
                 // Ajustar informações de casamento (conjugue)
                 if (member.informacoesPessoais.casamento) {
-                    if (member.informacoesPessoais.casamento.conjugue.id.length === 24){
+                    if (member.informacoesPessoais.casamento.conjugue.id && member.informacoesPessoais.casamento.conjugue.id.length === 24){
                         const getConjugueById: UserV2Entity = await this.userV2Repository.findById(member.informacoesPessoais.casamento.conjugue.id);
 
                         member.informacoesPessoais.casamento.conjugue.nome = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
