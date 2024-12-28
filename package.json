@@ -20,25 +20,30 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.717.0",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.2.3",
     "@nestjs/core": "^10.0.0",
     "@nestjs/event-emitter": "^2.0.4",
-    "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/platform-express": "^7.0.0",
     "@nestjs/schedule": "^4.1.0",
     "@nestjs/swagger": "^7.4.0",
     "@nestjs/typeorm": "^10.0.2",
     "@sendgrid/mail": "^8.1.3",
+    "aws-sdk": "^2.1692.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "date-fns": "^4.1.0",
     "firebase-admin": "^12.6.0",
     "mongodb": "^5.9.2",
+    "multer": "^1.4.5-lts.1",
+    "multer-s3": "^3.0.1",
     "passport-headerapikey": "^1.2.2",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
     "twilio": "^5.3.4",
-    "typeorm": "^0.3.20"
+    "typeorm": "^0.3.20",
+    "uuid": "^11.0.3"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

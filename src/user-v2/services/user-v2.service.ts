@@ -1,13 +1,13 @@
 import {BadRequestException, Injectable, Logger, NotFoundException} from "@nestjs/common";
 import * as process from "process";
 
-import {HistoricoDto, UserV2Entity} from "../domain/entity/user-v2.entity";
+import {UserV2Entity} from "../domain/entity/user-v2.entity";
 import {UserV2Repository} from "../repository/user-v2.repository";
 import {EmailService} from "../../user/service/email.service";
 import {AuthService} from "../../auth/services/auth.service";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {formatCPF, formatNome, formatTelefone} from "../../common/helpers/helpers";
-import {FirebaseProviderInfoV2, Historico, IMember} from "../domain/entity/abstractions/user-v2.abstraction";
+import {Historico, IMember} from "../domain/entity/abstractions/user-v2.abstraction";
 import {CreateUserV2Dto} from "../dto/create-user-v2.dto";
 import {EstadoCivilEnum, Providers, StatusEnum, UserRoles} from "../../user/domain/entity/abstractions/user";
 import {validateCPFLength} from "../../common/validations/cpf";
@@ -16,9 +16,9 @@ import {DeleteUserV2Dto} from "../dto/delete-user-v2.dto";
 import {SendEmailDto} from "../../user/dto/send-email.dto";
 import {InviteV2Repository} from "../repository/invite-v2.repository";
 import {InviteV2Entity} from "../domain/entity/invite-v2.entity";
-import {UpdateInfoDto} from "../../user/dto/update-info.dto";
 import {RequestUpdateV2Dto} from "../dto/request-update-v2.dto";
 import {TwilioMessagingService} from "../../common/services/twilio-messaging.service";
+import {UploadService} from "./upload.service";
 
 @Injectable()
 export class UserV2Service {
@@ -28,7 +28,8 @@ export class UserV2Service {
         private readonly authService: AuthService,
         private readonly eventEmitter: EventEmitter2,
         private readonly inviteV2Repository: InviteV2Repository,
-        private readonly twilioMessagingService: TwilioMessagingService
+        private readonly twilioMessagingService: TwilioMessagingService,
+        private readonly uploadService: UploadService,
     ) {
     }
 
@@ -270,9 +271,6 @@ export class UserV2Service {
                 throw new NotFoundException('Membro não encontrado!');
             }
 
-            const {foto, ...userToShow} = user;
-            Logger.log(`> [Service][User V2][GET][getById] - ${JSON.stringify(userToShow)}`);
-
             const formatList: UserV2Entity[] = await this.mapMemberList([user]);
 
             return formatList[0];
@@ -303,8 +301,7 @@ export class UserV2Service {
         Logger.log(`> [Controller][User V2][GET][findByEmail] - init`);
         try {
             const user: UserV2Entity = await this.userV2Repository.findByEmail(email);
-            const {foto, ...userToShow} = user;
-            Logger.log(`> [Service][User V2][GET][findByEmail] - ${JSON.stringify(userToShow)}`);
+
             if (!user) {
                 throw new NotFoundException('Membro não encontrado!');
 
@@ -417,7 +414,7 @@ export class UserV2Service {
                     isDiacono: member.isDiacono,
                     createdAt: member.createdAt,
                     updatedAt: member.updatedAt,
-                    historico: member.historico.filter((historico: HistoricoDto) => historico.chave !== 'autenticacao'),
+                    historico: [], // member.historico.filter((historico: HistoricoDto) => historico.chave !== 'autenticacao'),
                     foto: member.foto,
                 }
 
@@ -433,9 +430,6 @@ export class UserV2Service {
             const user = await this.userV2Repository.findByEmail(data.email);
 
             const userFirebase = await this.authService.findUserByEmail(data.email);
-
-            Logger.log(`> [Service][User V2][Post][POST] user - ${JSON.stringify(user)}`);
-            Logger.log(`> [Service][User V2][Post][POST] userFirebase - ${JSON.stringify(userFirebase)}`);
 
             if (user) {
                 throw new BadRequestException('Email já em uso!');
@@ -516,7 +510,6 @@ export class UserV2Service {
 
     private async createUserUniversal(data: CreateUserV2Dto, password?: string): Promise<UserV2Entity> {
         Logger.log(`> [Service][User V2][Post][createUserUniversal] - init`);
-        Logger.log(`> [Service][User V2][Post][createUserUniversal] data - ${JSON.stringify(data)}`);
 
         if (!(data && data.role in UserRoles)) {
             throw new BadRequestException('Regra de usuário inválida!');
@@ -637,8 +630,6 @@ export class UserV2Service {
             }
         }
 
-        Logger.log(`> [Service][User V2][POST][Create] saved - ${JSON.stringify(saved)}`);
-        Logger.log(`> [Service][User V2][POST][Create] savedFirebase - ${JSON.stringify(savedFirebase)}`);
         Logger.log(`> [Service][User V2][POST][Create] - finished`);
         return saved;
     }
@@ -649,8 +640,6 @@ export class UserV2Service {
 
         try {
             const user: UserV2Entity = await this.userV2Repository.findById(id);
-            const {foto, ...userToShow} = user;
-            Logger.log(`> [Service][User V2][PUT][update][findById] - ${JSON.stringify(userToShow)}`);
 
             if (!user) {
                 throw new NotFoundException('Membro não encontrado!');
@@ -678,8 +667,6 @@ export class UserV2Service {
                 Logger.log(`> [Service][User V2][PUT][update] No changes detected`);
                 return user; // Retorna o usuário sem alterações
             }
-
-            Logger.log(`> [Service][User V2][PUT][update][updatedData] - ${JSON.stringify(updatedData)}`);
 
             // Realizar o update diretamente no banco
             await this.userV2Repository.update(id, updatedData);
@@ -709,12 +696,16 @@ export class UserV2Service {
         Logger.log(`> [Service][User V2][DELETE] init`);
         try {
             const user: UserV2Entity = await this.userV2Repository.findById(param.id);
-            Logger.log(`> [Service][User V2][PUT][update][findById] - ${JSON.stringify(user)}`);
 
             if (!user) {
                 throw new NotFoundException('Membro não encontrado!');
             }
 
+            const photoFileKey: string = user.foto && user.foto.length > 0 ? user.foto.split('.amazonaws.com/')[1] : '';
+
+            if (photoFileKey != '') {
+                await this.uploadService.deleteObject(photoFileKey);
+            }
             await this.authService.removeUserV2(user);
             await this.userV2Repository.deleteUser(user);
 
@@ -729,7 +720,6 @@ export class UserV2Service {
         Logger.log(`> [Service][User V2][DELETE INVITE] init`);
         try {
             const invite: InviteV2Entity = await this.inviteV2Repository.findById(param.id);
-            Logger.log(`> [Service][User V2][DELETE INVITE][findById] - ${JSON.stringify(invite)}`);
 
             if (!invite) {
                 throw new NotFoundException('Membro não encontrado!');

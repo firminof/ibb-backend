@@ -7,6 +7,7 @@ import {EmailService} from "../user/service/email.service";
 import {AuthService} from "../auth/services/auth.service";
 import {TwilioMessagingService} from "../common/services/twilio-messaging.service";
 import {InviteV2Repository} from "./repository/invite-v2.repository";
+import {UploadService} from "./services/upload.service";
 
 @Module({
     imports: [TypeOrmModule.forFeature([UserV2Repository, InviteV2Repository])],
@@ -18,8 +19,9 @@ import {InviteV2Repository} from "./repository/invite-v2.repository";
         EmailService,
         AuthService,
         TwilioMessagingService,
+        UploadService
     ],
-    exports: [TypeOrmModule, UserV2Repository, InviteV2Repository,  UserV2Service]
+    exports: [TypeOrmModule, UserV2Repository, InviteV2Repository,  UserV2Service, UploadService]
 })
 
 export class UserV2Module {

@@ -1,17 +1,31 @@
-import {Body, Controller, Delete, Get, HttpCode, HttpStatus, Logger, Param, Post, Put} from "@nestjs/common";
+import {
+    BadRequestException,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Logger,
+    Param,
+    Post,
+    Put,
+    UploadedFile
+} from "@nestjs/common";
 import {ApiResponse, ApiTags} from "@nestjs/swagger";
 import {CreateUserV2Dto} from "../dto/create-user-v2.dto";
 import {UserV2Entity} from "../domain/entity/user-v2.entity";
 import {UserV2Service} from "../services/user-v2.service";
 import {UpdateUserV2Dto} from "../dto/update-user-v2.dto";
-import {DeepPartial} from "typeorm";
-import {DeleteUserDto} from "../../user/dto/delete-user.dto";
 import {DeleteUserV2Dto} from "../dto/delete-user-v2.dto";
 import {SendEmailDto} from "../../user/dto/send-email.dto";
 import {InviteV2Entity} from "../domain/entity/invite-v2.entity";
 import {RequestUpdateV2Dto} from "../dto/request-update-v2.dto";
 import {TwilioWhatsappInputDto} from "../../common/dto/twillio-whatsapp.dto";
 import {TwilioMessagingService} from "../../common/services/twilio-messaging.service";
+import {ApiImageFile} from "../decorators/api-file.decorator";
+import {ParseFile} from "../decorators/parse-file.decorator";
+import {UploadService} from "../services/upload.service";
 
 @Controller('v2/user')
 @ApiTags('User V2')
@@ -19,7 +33,9 @@ import {TwilioMessagingService} from "../../common/services/twilio-messaging.ser
 export class UserV2Controller {
     constructor(
         private readonly userV2Service: UserV2Service,
-        private readonly twilioMessagingService: TwilioMessagingService) {
+        private readonly twilioMessagingService: TwilioMessagingService,
+        private readonly uploadService: UploadService,
+        ) {
     }
 
     @Get('all')
@@ -129,16 +145,32 @@ export class UserV2Controller {
 
     @Post()
     @HttpCode(HttpStatus.CREATED)
-    @ApiResponse({status: HttpStatus.CREATED})
-    async create(@Body() data: CreateUserV2Dto) {
+    @ApiResponse({status: HttpStatus.CREATED, type: UserV2Entity})
+    async create(@Body() data: CreateUserV2Dto): Promise<UserV2Entity> {
         Logger.log(``);
         Logger.log(`> [Controller][User V2][POST][Create] - init`);
         return this.userV2Service.create(data);
     }
 
+    @Post('photo')
+    @HttpCode(HttpStatus.CREATED)
+    @ApiResponse({status: HttpStatus.CREATED})
+    @ApiImageFile('file', true)
+    async uploadImage(@UploadedFile(ParseFile) file): Promise<{ url: string }> {
+        Logger.log(``);
+        Logger.log(`> [Controller][User V2][POST][uploadImage] - init`);
+
+        if (!file) {
+            throw new BadRequestException('Nenhuma imagem foi enviada.');
+        }
+
+        const fileUrl = await this.uploadService.uploadFile(file);
+        return { url: fileUrl };
+    }
+
     @Put(':id')
     @HttpCode(HttpStatus.OK)
-    @ApiResponse({status: HttpStatus.NO_CONTENT})
+    @ApiResponse({status: HttpStatus.NO_CONTENT, type: UserV2Entity})
     async update(@Param('id') id: string, @Body() data: UpdateUserV2Dto): Promise<UserV2Entity> {
         Logger.log(``);
         Logger.log(`> [Controller][User V2][PUT][Update] - init`);
