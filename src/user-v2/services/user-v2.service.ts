@@ -1,12 +1,12 @@
 import {BadRequestException, Injectable, Logger, NotFoundException} from "@nestjs/common";
 import * as process from "process";
 
-import {UserV2Entity} from "../domain/entity/user-v2.entity";
+import {HistoricoDto, UserV2Entity} from "../domain/entity/user-v2.entity";
 import {UserV2Repository} from "../repository/user-v2.repository";
 import {EmailService} from "../../user/service/email.service";
 import {AuthService} from "../../auth/services/auth.service";
 import {EventEmitter2} from "@nestjs/event-emitter";
-import {formatCPF, formatNome, formatTelefone} from "../../common/helpers/helpers";
+import {formatCPF, formatNome, formatTelefone, gerarHistorico} from "../../common/helpers/helpers";
 import {Historico, IMember} from "../domain/entity/abstractions/user-v2.abstraction";
 import {CreateUserV2Dto} from "../dto/create-user-v2.dto";
 import {EstadoCivilEnum, Providers, StatusEnum, UserRoles} from "../../user/domain/entity/abstractions/user";
@@ -334,6 +334,34 @@ export class UserV2Service {
                     }
                 }
 
+                if (member && member.informacoesPessoais.temFilhos && member.informacoesPessoais.filhos.length > 0) {
+                    // Mapeia os filhos para buscar as informações de cada um na base de dados
+                    for (let i = 0; i < member.informacoesPessoais.filhos.length; i++) {
+                        const filho: IMember = member.informacoesPessoais.filhos[i];
+
+                        // Busca as informações do filho na base de dados
+                        if (filho.id === '' && filho.nome != '') continue;
+
+                        const getFilhoById: UserV2Entity = await this.userV2Repository.findById(filho.id);
+
+                        // Verifica se o filho foi encontrado e atualiza as propriedades
+                        if (getFilhoById) {
+                            // Preenche as informações do filho com os dados encontrados
+                            filho.nome = getFilhoById.nome;
+                            filho.isMember = true;
+                            filho.isDiacono = getFilhoById.isDiacono;
+                        } else {
+                            // Se o filho não for encontrado, define os valores padrão
+                            filho.nome = '';
+                            filho.isMember = false;
+                            filho.isDiacono = false;
+                        }
+                    }
+                } else {
+                    // Caso não tenha filhos, define um valor padrão
+                    member.informacoesPessoais.filhos = [];
+                }
+
                 // Ajustar informações de casamento (conjugue)
                 if (member.informacoesPessoais.casamento) {
                     if (member.informacoesPessoais.casamento.conjugue.id && member.informacoesPessoais.casamento.conjugue.id.length === 24){
@@ -414,7 +442,12 @@ export class UserV2Service {
                     isDiacono: member.isDiacono,
                     createdAt: member.createdAt,
                     updatedAt: member.updatedAt,
-                    historico: [], // member.historico.filter((historico: HistoricoDto) => historico.chave !== 'autenticacao'),
+                    historico: member.historico
+                        .filter((historico: HistoricoDto) => historico.chave !== 'autenticacao')
+                        .sort((a: HistoricoDto, b: HistoricoDto) => {
+                            // Ordena por data (mais recente primeiro)
+                            return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+                        }),
                     foto: member.foto,
                 }
 
@@ -645,31 +678,36 @@ export class UserV2Service {
                 throw new NotFoundException('Membro não encontrado!');
             }
 
-            const historico: Historico[] = [];
+            // const historico: Historico[] = [];
+            //
+            // // Filtrar apenas os campos que mudaram
+            // const updatedData = Object.keys(data).reduce((acc, key) => {
+            //     if (JSON.stringify(data[key]) !== JSON.stringify(user[key])) {
+            //         acc[key] = data[key];
+            //         if (key !== 'autenticacao') {
+            //             historico.push({
+            //                 chave: key,
+            //                 antigo: user[key],
+            //                 novo: data[key],
+            //                 updatedAt: new Date()
+            //             })
+            //         }
+            //     }
+            //     return {...acc, updatedAt: new Date(), historico: [...historico, ...user.historico]};
+            // }, {});
 
-            // Filtrar apenas os campos que mudaram
-            const updatedData = Object.keys(data).reduce((acc, key) => {
-                if (JSON.stringify(data[key]) !== JSON.stringify(user[key])) {
-                    acc[key] = data[key];
-                    if (key !== 'autenticacao') {
-                        historico.push({
-                            chave: key,
-                            antigo: user[key],
-                            novo: data[key],
-                            updatedAt: new Date()
-                        })
-                    }
-                }
-                return {...acc, updatedAt: new Date(), historico: [...historico, ...user.historico]};
-            }, {});
+            // if (Object.keys(updatedData).length === 0) {
+            //     Logger.log(`> [Service][User V2][PUT][update] No changes detected`);
+            //     return user; // Retorna o usuário sem alterações
+            // }
 
-            if (Object.keys(updatedData).length === 0) {
-                Logger.log(`> [Service][User V2][PUT][update] No changes detected`);
-                return user; // Retorna o usuário sem alterações
-            }
+            const changes: Historico[] = gerarHistorico(user, data);
+            // Faz o merge do histórico antigo com o novo
+            data.historico = [...user.historico, ...changes];
+            data.updatedAt = new Date();
 
             // Realizar o update diretamente no banco
-            await this.userV2Repository.update(id, updatedData);
+            await this.userV2Repository.update(id, data);
 
             // Retornar o estado atualizado do usuário
             const updatedUser: UserV2Entity = await this.userV2Repository.findById(id);

@@ -1,43 +1,5 @@
-import {UserEntity} from "../../user/domain/entity/user.entity";
-import {IUser, IUserResponseApi} from "../../user/dto/list-users.dto";
+import {Historico, UserV2} from "../../user-v2/domain/entity/abstractions/user-v2.abstraction";
 
-export const calcularIdade = (dataNascimento: Date) => {
-    // Converter a string de data de nascimento em um objeto Date
-    const dataNasc: Date = new Date(`${dataNascimento.toString().split('T')[0]}T03:01:00.000Z`);
-    const hoje: Date = new Date();
-
-    // Calcular a diferença entre o ano atual e o ano de nascimento
-    let idade: number = hoje.getFullYear() - dataNasc.getFullYear();
-
-    // Ajustar a idade caso o aniversário ainda não tenha ocorrido no ano atual
-    const mesAtual: number = hoje.getMonth();
-    const mesNasc: number = dataNasc.getMonth();
-    const diaAtual: number = hoje.getDate();
-    const diaNasc: number = dataNasc.getDate();
-
-    if (mesAtual < mesNasc || (mesAtual === mesNasc && diaAtual < diaNasc)) {
-        idade--;
-    }
-
-    return idade;
-}
-
-export const formatDataPtbr = (data: any): string => {
-    if (data) {
-        let data_iso: Date = new Date(`${data.toString().split('T')[0]}T03:01:00.000Z`);
-
-        if (data instanceof Date) {
-            data_iso = data;
-            return formatDataHoraPtbr(data_iso);
-        }
-
-        const data_dia: string = `${data_iso.getDate() <= 9 ? '0' + data_iso.getDate() : data_iso.getDate()}`;
-        const data_mes: string = `${(data_iso.getMonth() + 1 <= 9) ? '0' + (data_iso.getMonth() + 1) : data_iso.getMonth() + 1}`;
-        const data_ano: string = `${data_iso.getFullYear()}`;
-        return `${data_dia}/${data_mes}/${data_ano}`; //EX: 15/11/2024
-    }
-    return ''
-}
 
 export const formatDataHoraPtbr = (data_iso: Date): string => {
     const data_dia: string = `${data_iso.getDate() <= 9 ? '0' + data_iso.getDate() : data_iso.getDate()}`;
@@ -84,73 +46,6 @@ export const formatNome = (nome: string) => {
     }).join(' ');
 }
 
-export const formatListMember = (allMembers: UserEntity[]) => {
-    if (allMembers.length === 0) return [];
-
-    return allMembers.map((member: UserEntity) => {
-        const data_nascimento: string = formatDataPtbr(member.data_nascimento);
-        const data_casamento: string = formatDataPtbr(member.data_casamento);
-        const transferencia: string = formatDataPtbr(member.transferencia);
-        const idade: number = calcularIdade(member.data_nascimento);
-        const cpf: string = formatCPF(member.cpf);
-        const telefone: string = formatTelefone(member.telefone);
-        const nome: string = formatNome(member.nome);
-
-        const updatedAt: string = formatDataPtbr(member.updatedAt);
-        const createdAt: string = formatDataPtbr(member.createdAt);
-        const falecimento: string = formatDataPtbr(member.falecimento);
-        const excluido: string = formatDataPtbr(member.excluido);
-        const data_ingresso: string = formatDataPtbr(member.data_ingresso);
-        const diacono: IUser = {
-            id: member.diacono.id,
-            nome: member && member.diacono && member.diacono.nome ? formatNome(member.diacono.nome) : ''
-        }
-        const filhos: IUser[] = [];
-        if (member && member.filhos && member.filhos.length > 0) {
-            member.filhos.forEach((filho: IUser) => {
-                filho.nome = filho.nome ? formatNome(filho.nome) : '';
-                filhos.push(filho);
-            });
-        }
-
-        const user: IUserResponseApi = {
-            _id: member._id,
-            nome,
-            cpf,
-            rg: member.rg,
-            email: member.email,
-            role: member.role,
-            status: member.status.toLowerCase(),
-            data_nascimento: data_nascimento,
-            estado_civil: member.estado_civil,
-            conjugue: member.conjugue,
-            foto: member.foto,
-            ministerio: member.ministerio ? member.ministerio : [],
-            possui_filhos: Boolean(member.possui_filhos),
-            diacono,
-            filhos,
-            idade,
-            telefone,
-            data_casamento,
-            transferencia,
-            falecimento,
-            excluido,
-            updatedAt,
-            createdAt,
-            data_ingresso,
-            forma_ingresso: member.forma_ingresso,
-            local_ingresso: member.local_ingresso,
-            motivo_transferencia: member.motivo_transferencia,
-            motivo_falecimento: member.motivo_falecimento,
-            motivo_exclusao: member.motivo_exclusao,
-            motivo_visita: member.motivo_visita,
-            is_diacono: member.is_diacono,
-        }
-
-        return user;
-    });
-}
-
 export const formatToInternationalStandard = (phone: string) => {
     const includesCountryCode: boolean = phone.includes('+55');
 
@@ -162,3 +57,91 @@ export const formatToInternationalStandard = (phone: string) => {
 
     return '+55' + treatedPhone;
 };
+
+function formatChildrenHistory(oldValue: any[], newValue: any[]): string {
+    // Comparar as mudanças entre filhos
+    const formatChild = (child: any) => {
+        return `nome: ${child.nome || 'não especificado'}, membro: ${child.isMember ? 'Sim' : 'Não'}, diác. ${child.isDiacono ? 'Sim' : 'Não'}`;
+    };
+
+    const changes: string[] = [];
+    oldValue.forEach((oldChild, index) => {
+        const newChild = newValue[index];
+        // Verificar se houve alteração
+        if (oldChild && newChild && (oldChild.nome !== newChild.nome || oldChild.isMember !== newChild.isMember || oldChild.isDiacono !== newChild.isDiacono)) {
+            changes.push(`nome: ${newChild.nome || 'não especificado'}, membro: ${newChild.isMember ? 'Sim' : 'Não'}, diác. ${newChild.isDiacono ? 'Sim' : 'Não'}`);
+        }
+    });
+
+    return changes.join(' | ');
+}
+
+export function gerarHistorico(oldState: any, newState: any): Historico[] {
+    const changes: Historico[] = [];
+
+    function compareArrays(prefix: string, oldArray: any[], newArray: any[]) {
+        const formatted = formatChildrenHistory(oldArray, newArray);
+
+        if (formatted) {
+            changes.push({
+                chave: prefix,
+                antigo: formatted,
+                novo: formatted,
+                updatedAt: new Date(),
+            });
+        }
+    }
+
+    function compareObjects(prefix: string, oldObj: any, newObj: any) {
+        if (prefix.startsWith('autenticacao')) return; // Ignora qualquer chave começando com 'autenticacao'
+        if (prefix.startsWith('_id')) return; // Ignora qualquer chave começando com 'id'
+        if (prefix.startsWith('historico')) return; // Ignora qualquer chave começando com 'historico'
+        if (prefix.startsWith('updatedAt')) return; // Ignora qualquer chave começando com 'updatedAt'
+        if (prefix.startsWith('createdAt')) return; // Ignora qualquer chave começando com 'updatedAt'
+        if (prefix.startsWith('id')) return; // Ignora qualquer chave começando com 'updatedAt'
+        if (prefix.startsWith('is_member')) return; // Ignora qualquer chave começando com 'updatedAt'
+
+        if (oldObj === newObj) return;
+
+        if (Array.isArray(oldObj) && Array.isArray(newObj)) {
+            compareArrays(prefix, oldObj, newObj);
+        } else if (typeof oldObj === 'object' && typeof newObj === 'object' && oldObj && newObj) {
+            const keys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)]);
+            keys.forEach(key => {
+                compareObjects(
+                    `${prefix ? `${prefix}.` : ''}${key}`,
+                    oldObj[key],
+                    newObj[key]
+                );
+            });
+        } else {
+            changes.push({
+                chave: prefix,
+                antigo: formatValue(oldObj),
+                novo: formatValue(newObj),
+                updatedAt: new Date(),
+            });
+        }
+    }
+
+    compareObjects('', oldState, newState);
+    return changes;
+}
+
+function formatValue(value: any): string {
+    if (value === null || value === undefined) {
+        return ''; // Valor vazio para null ou undefined
+    } else if (typeof value === 'boolean') {
+        return value ? 'Sim' : 'Não'; // Formata booleanos
+    } else if (Array.isArray(value)) {
+        return `[${value.map(item => JSON.stringify(item, null, 2)).join(', ')}]`; // Formata arrays
+    } else if (typeof value === 'object') {
+        try {
+            return JSON.stringify(value, null, 4); // Formata JSON com 4 espaços de indentação
+        } catch {
+            return '[Unserializable Object]';
+        }
+    } else {
+        return String(value); // Retorna valores como estão
+    }
+}
