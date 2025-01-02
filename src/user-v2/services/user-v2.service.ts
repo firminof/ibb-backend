@@ -38,8 +38,18 @@ export class UserV2Service {
         try {
             const allMembers: UserV2Entity[] = await this.userV2Repository.getAll();
             if (allMembers.length === 0) return [];
+            let mappedMembers: UserV2Entity[] = [];
 
-            return this.mapMemberList(allMembers);
+            try {
+                Logger.log(`> [Service][User V2][GET][getAll] - membros recolhidos`);
+                mappedMembers = await this.mapMemberList(allMembers);
+            } catch (e) {
+                Logger.log(`> [Service][User V2][GET][getAll][Erro] - mapear membros `, e.stack);
+            }
+
+            Logger.log(`> [Service][User V2][GET][getAll] - membros mapeados`);
+            return mappedMembers;
+
         } catch (e) {
             Logger.log(`> [Service][User V2][GET][getAll] catch - ${JSON.stringify(e)}`);
 
@@ -271,7 +281,15 @@ export class UserV2Service {
                 throw new NotFoundException('Membro não encontrado!');
             }
 
-            const formatList: UserV2Entity[] = await this.mapMemberList([user]);
+            let formatList: UserV2Entity[] = [];
+
+            try {
+                Logger.log(`> [Service][User V2][GET][getById] - membro  recolhido`);
+                formatList = await this.mapMemberList([user]);
+            } catch (e) {
+                Logger.log(`> [Service][User V2][GET][getById][Erro] - mapear membros `, e.stack);
+            }
+            // const formatList: UserV2Entity[] = await this.mapMemberList([user]);
 
             return formatList[0];
         } catch (e) {
@@ -315,145 +333,154 @@ export class UserV2Service {
     }
 
     private async mapMemberList(members: UserV2Entity[]): Promise<UserV2Entity[]> {
-        return Promise.all(
-            members.map(async (member: UserV2Entity): Promise<UserV2Entity> => {
-                let diacono: IMember = {} as IMember;
-
-                if (member && member.diacono && member.diacono.id) {
-                    const getDiaconoById: UserV2Entity = await this.userV2Repository.findById(member.diacono.id);
-                    diacono.nome = getDiaconoById.nome;
-                    diacono.isDiacono = getDiaconoById.isDiacono;
-                    diacono.isMember = true;
-                    diacono.id = member.diacono.id;
-                } else {
-                    diacono = {
+        try {
+            return Promise.all(
+                members.map(async (member: UserV2Entity): Promise<UserV2Entity> => {
+                    let diacono: IMember = {
                         id: "",
                         isMember: false,
                         isDiacono: false,
-                        nome: ""
-                    }
-                }
+                        nome: "",
+                    };
 
-                if (member && member.informacoesPessoais.temFilhos && member.informacoesPessoais.filhos.length > 0) {
-                    // Mapeia os filhos para buscar as informações de cada um na base de dados
-                    for (let i = 0; i < member.informacoesPessoais.filhos.length; i++) {
-                        const filho: IMember = member.informacoesPessoais.filhos[i];
+                    if (member?.diacono?.id) {
+                        try {
+                            const getDiaconoById: UserV2Entity = await this.userV2Repository.findById(member.diacono.id);
 
-                        // Busca as informações do filho na base de dados
-                        if (filho.id === '' && filho.nome != '') continue;
-
-                        const getFilhoById: UserV2Entity = await this.userV2Repository.findById(filho.id);
-
-                        // Verifica se o filho foi encontrado e atualiza as propriedades
-                        if (getFilhoById) {
-                            // Preenche as informações do filho com os dados encontrados
-                            filho.nome = getFilhoById.nome;
-                            filho.isMember = true;
-                            filho.isDiacono = getFilhoById.isDiacono;
-                        } else {
-                            // Se o filho não for encontrado, define os valores padrão
-                            filho.nome = '';
-                            filho.isMember = false;
-                            filho.isDiacono = false;
+                            diacono = {
+                                id: member.diacono.id,
+                                nome: getDiaconoById?.nome || "",
+                                isMember: true,
+                                isDiacono: getDiaconoById?.isDiacono || false,
+                            };
+                        } catch (error) {
+                            console.error(`Erro ao buscar informações do diácono com ID ${member.diacono.id}:`, error);
+                            // Diacono permanece com os valores padrão
                         }
                     }
-                } else {
-                    // Caso não tenha filhos, define um valor padrão
-                    member.informacoesPessoais.filhos = [];
-                }
 
-                // Ajustar informações de casamento (conjugue)
-                if (member.informacoesPessoais.casamento) {
-                    if (member.informacoesPessoais.casamento.conjugue.id && member.informacoesPessoais.casamento.conjugue.id.length === 24){
-                        const getConjugueById: UserV2Entity = await this.userV2Repository.findById(member.informacoesPessoais.casamento.conjugue.id);
+                    if (member?.informacoesPessoais?.temFilhos && member.informacoesPessoais.filhos?.length > 0) {
+                        // Itera sobre os filhos para buscar informações adicionais na base de dados
+                        for (const filho of member.informacoesPessoais.filhos) {
+                            // Ignora filhos que possuem apenas nome preenchido sem ID
+                            if (filho?.id === '' && filho?.nome) continue;
 
-                        member.informacoesPessoais.casamento.conjugue.nome = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
-                            formatNome(getConjugueById.nome) : '';
+                            if (filho && filho.id && filho.id.length === 24) {
+                                try {
+                                    // Busca as informações do filho na base de dados
+                                    const getFilhoById: UserV2Entity = await this.userV2Repository.findById(filho.id);
 
-                        member.informacoesPessoais.casamento.conjugue.id = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
-                            member.informacoesPessoais.casamento.conjugue.id : '';
-
-                        member.informacoesPessoais.casamento.conjugue.isMember = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
-                            member.informacoesPessoais.casamento.conjugue.isMember : false;
-
-                        member.informacoesPessoais.casamento.conjugue.isDiacono = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
-                            getConjugueById.isDiacono : false;
+                                    // Atualiza os dados do filho com os valores encontrados
+                                    filho.nome = getFilhoById?.nome || '';
+                                    filho.isMember = true;
+                                    filho.isDiacono = getFilhoById?.isDiacono || false;
+                                } catch (error) {
+                                    console.error(`Erro ao buscar informações do filho com ID ${filho.id}:`, error);
+                                    // Define valores padrão em caso de erro na busca
+                                    filho.nome = '';
+                                    filho.isMember = false;
+                                    filho.isDiacono = false;
+                                }
+                            } else {
+                                // Define valores padrão para filhos sem ID
+                                filho.nome = filho?.nome || '';
+                                filho.isMember = false;
+                                filho.isDiacono = false;
+                            }
+                        }
                     } else {
-                        member.informacoesPessoais.casamento.conjugue.nome = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
-                            member.informacoesPessoais.casamento.conjugue.nome : '';
-
-                        member.informacoesPessoais.casamento.conjugue.id = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
-                            member.informacoesPessoais.casamento.conjugue.id : '';
-
-                        member.informacoesPessoais.casamento.conjugue.isMember = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
-                            member.informacoesPessoais.casamento.conjugue.isMember : false;
-
-                        member.informacoesPessoais.casamento.conjugue.isDiacono = member && member.informacoesPessoais && member.informacoesPessoais.casamento && member.informacoesPessoais.casamento.conjugue ?
-                            member.informacoesPessoais.casamento.conjugue.isDiacono : false;
+                        // Garante que a lista de filhos esteja inicializada como um array vazio
+                        member.informacoesPessoais = {
+                            ...member.informacoesPessoais,
+                            filhos: [],
+                        };
                     }
 
-                } else {
-                    member.informacoesPessoais.casamento = {
-                        conjugue: {
-                            id: "",
-                            isMember: false,
-                            isDiacono: false,
-                            nome: ""
+
+                    // Ajustar informações de casamento (conjugue)
+                    if (member.informacoesPessoais?.casamento?.conjugue) {
+                        const conjugue = member.informacoesPessoais.casamento.conjugue;
+
+                        if (conjugue.id?.length === 24) {
+                            const getConjugueById: UserV2Entity = await this.userV2Repository.findById(conjugue.id);
+
+                            conjugue.nome = formatNome(getConjugueById?.nome || '');
+                            conjugue.isMember = true;
+                            conjugue.isDiacono = getConjugueById?.isDiacono || false;
+                        } else {
+                            conjugue.nome = conjugue.nome || '';
+                            conjugue.id = conjugue.id || '';
+                            conjugue.isMember = conjugue.isMember || false;
+                            conjugue.isDiacono = conjugue.isDiacono || false;
+                        }
+                    } else {
+                        member.informacoesPessoais = {
+                            ...member.informacoesPessoais,
+                            casamento: {
+                                conjugue: {
+                                    id: '',
+                                    nome: '',
+                                    isMember: false,
+                                    isDiacono: false,
+                                },
+                                dataCasamento: null,
+                            },
+                        };
+                    }
+
+                    // Ajustar informações de casamento (dataCasamento)
+                    if (member.informacoesPessoais.casamento.dataCasamento) {
+                        member.informacoesPessoais.casamento.dataCasamento = member.informacoesPessoais.casamento.dataCasamento ?
+                            member.informacoesPessoais.casamento.dataCasamento : null
+                    }
+
+                    const user: UserV2Entity = {
+                        _id: member._id.toString(),
+                        nome: formatNome(member.nome),
+                        rg: member.rg,
+                        role: member.role,
+                        telefone: formatTelefone(member.telefone),
+                        cpf: formatCPF(member.cpf),
+                        email: member.email,
+                        dataNascimento: member.dataNascimento,
+                        idade: member.idade,
+                        diacono: diacono,
+                        endereco: member.endereco,
+                        status: member.status,
+                        ministerio: member.ministerio,
+
+                        informacoesPessoais: {
+                            casamento: member.informacoesPessoais.casamento,
+                            estadoCivil: member.informacoesPessoais.estadoCivil,
+                            filhos: member.informacoesPessoais.filhos,
+                            temFilhos: member.informacoesPessoais.temFilhos
                         },
-                        dataCasamento: null
+
+                        exclusao: member.exclusao ? member.exclusao : {data: null, motivo: ''},
+                        falecimento: member.falecimento ? member.falecimento : {data: null, motivo: '', local: ''},
+                        ingresso: member.ingresso ? member.ingresso : {data: null, local: '', forma: ''},
+                        transferencia: member.transferencia ? member.transferencia : {data: null, motivo: '', local: ''},
+                        visitas: member.visitas ? member.visitas : {motivo: ''},
+
+                        autenticacao: member.autenticacao,
+                        isDiacono: member.isDiacono,
+                        createdAt: member.createdAt,
+                        updatedAt: member.updatedAt,
+                        historico: member.historico
+                            .filter((historico: HistoricoDto) => historico.chave !== 'autenticacao'),
+                        // .sort((a: HistoricoDto, b: HistoricoDto) => {
+                        //     // Ordena por data (mais recente primeiro)
+                        //     return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+                        // }),
+                        foto: member.foto,
                     }
-                }
 
-                // Ajustar informações de casamento (dataCasamento)
-                if (member.informacoesPessoais.casamento.dataCasamento) {
-                    member.informacoesPessoais.casamento.dataCasamento = member.informacoesPessoais.casamento.dataCasamento ?
-                        member.informacoesPessoais.casamento.dataCasamento : null
-                }
-
-                const user: UserV2Entity = {
-                    _id: member._id.toString(),
-                    nome: formatNome(member.nome),
-                    rg: member.rg,
-                    role: member.role,
-                    telefone: formatTelefone(member.telefone),
-                    cpf: formatCPF(member.cpf),
-                    email: member.email,
-                    dataNascimento: member.dataNascimento,
-                    idade: member.idade,
-                    diacono: diacono,
-                    endereco: member.endereco,
-                    status: member.status,
-                    ministerio: member.ministerio,
-
-                    informacoesPessoais: {
-                        casamento: member.informacoesPessoais.casamento,
-                        estadoCivil: member.informacoesPessoais.estadoCivil,
-                        filhos: member.informacoesPessoais.filhos,
-                        temFilhos: member.informacoesPessoais.temFilhos
-                    },
-
-                    exclusao: member.exclusao ? member.exclusao : {data: null, motivo: ''},
-                    falecimento: member.falecimento ? member.falecimento : {data: null, motivo: '', local: ''},
-                    ingresso: member.ingresso ? member.ingresso : {data: null, local: '', forma: ''},
-                    transferencia: member.transferencia ? member.transferencia : {data: null, motivo: '', local: ''},
-                    visitas: member.visitas ? member.visitas : {motivo: ''},
-
-                    autenticacao: member.autenticacao,
-                    isDiacono: member.isDiacono,
-                    createdAt: member.createdAt,
-                    updatedAt: member.updatedAt,
-                    historico: member.historico
-                        .filter((historico: HistoricoDto) => historico.chave !== 'autenticacao')
-                        .sort((a: HistoricoDto, b: HistoricoDto) => {
-                            // Ordena por data (mais recente primeiro)
-                            return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-                        }),
-                    foto: member.foto,
-                }
-
-                return user;
-            })
-        )
+                    return user;
+                })
+            )
+        } catch (e) {
+            Logger.error('Mapear membros: ', e.stack);
+        }
     }
 
     async create(data: CreateUserV2Dto) {
@@ -475,12 +502,13 @@ export class UserV2Service {
             return await this.createUserUniversal(data);
         } catch (e) {
             Logger.log(`> [Service][User V2][POST][Create] catch - ${JSON.stringify(e)}`);
+            Logger.log(`> [Service][User V2][POST][Create] catch - ${e['response']['message']}`);
             if (e['response']['message'].toString().includes('There is no user record corresponding to the provided identifier')) {
                 Logger.log('Criando membro pela primeira vez dentro do catch')
                 return await this.createUserUniversal(data);
             }
 
-            throw new BadRequestException(e['message']);
+            throw new BadRequestException(e['response']['message']);
         }
     }
 
@@ -562,12 +590,12 @@ export class UserV2Service {
 
         let diacono: IMember = {} as IMember;
 
-        if (data && data.diacono && data.diacono.id) {
+        if (data && data.diacono && data.diacono.id && data.diacono.id.length === 24) {
             const getDiaconoById: UserV2Entity = await this.getById(data.diacono.id);
-            diacono.nome = getDiaconoById.nome;
-            diacono.isDiacono = getDiaconoById.isDiacono;
+            diacono.nome = getDiaconoById?.nome;
+            diacono.isDiacono = getDiaconoById?.isDiacono;
             diacono.isMember = true;
-            diacono.id = data.diacono.id;
+            diacono.id = data?.diacono?.id;
         }
 
         const user: UserV2Entity = new UserV2Entity();
