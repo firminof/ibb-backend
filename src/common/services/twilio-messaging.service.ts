@@ -86,7 +86,7 @@ _Esta mensagem foi enviada automaticamente, não responda._
         }
     }
 
-    @OnEvent('twillio-whatsapp.send')
+    // @OnEvent('twillio-whatsapp.send')
     async sendWhatsappMessagePedirOracaoWithTwilio(input: TwilioWhatsappInputDto, membro: string) {
         let tentativas: number = 0;
 
@@ -253,6 +253,78 @@ _Se você não solicitou este convite, pode ignorar esta mensagem._
 
         } catch (e) {
             Logger.log(`> [Service][Twillio][WhatsApp][SendInvite] catch: ${e['message']}`);
+            throw new BadRequestException(
+                `Erro ao enviar menssagem de whatsapp com Twilio: ${e.message}`,
+            );
+        }
+    }
+
+    @OnEvent('twillio-whatsapp.atualizacao-cadastral.send', {async: true})
+    async sendWhatsappMessageAtualizacaoCadastralWithTwilio(data: { numeroWhatsapp: string, linkAtualizacao: string, nome: string }) {
+        try {
+            /*
+            *Mensagem enviada pela Igreja Batista Do Brooklin*
+
+🔄 Atualização Cadastral
+
+Olá, {{1}}
+Estamos realizando uma atualização de cadastro em nossa plataforma para garantir que todas as informações estejam corretas e atualizadas.
+
+Por que atualizar seu cadastro?
+- Facilitar a comunicação com a nossa equipe.
+- Garantir acesso a todas as funcionalidades da plataforma.
+
+Para realizar a atualização, basta clicar no link abaixo e preencher as informações solicitadas.
+
+É rápido e simples!
+
+{{2}}
+
+Se já estiver conectado na plataforma, o link irá direto a tela de edição. Senão deverá se autenticar e clicar em "EDITAR" em seu perfil!
+
+Se precisar de ajuda, nossa equipe está à disposição para auxiliá-lo.
+
+Atenciosamente,
+Igreja Batista do Brooklin
+
+_Esta mensagem foi enviada automaticamente, não responda._
+             */
+            const treatedRecipient: string = formatToInternationalStandard(
+                data.numeroWhatsapp
+            );
+
+            Logger.log(``);
+            Logger.log(`> [Service][Twillio][WhatsApp][sendWhatsappMessageAtualizacaoCadastralWithTwilio] para: ${treatedRecipient}`);
+            Logger.log(`> [Service][Twillio][WhatsApp][sendWhatsappMessageAtualizacaoCadastralWithTwilio] link(url): ${data.linkAtualizacao}`);
+            Logger.log(`> [Service][Twillio][WhatsApp][sendWhatsappMessageAtualizacaoCadastralWithTwilio] nome membro: ${data.nome}`);
+
+            const message = await client.messages.create({
+                contentSid: process.env.TWILIO_CONTENT_SID_ATUALIZACAO_CADASTRAL,
+                messagingServiceSid: process.env.TWILIO_MESSAGE_SERVICE_SID,
+                from: `whatsapp:${sender}`,
+                contentVariables: JSON.stringify({
+                    1: data.nome,
+                    2: data.linkAtualizacao
+                }),
+                to: `whatsapp:${treatedRecipient}`,
+                attempt: 3
+            });
+
+            await new Promise((resolve) => setTimeout(resolve, 3000));
+
+            let whatsAppStatusMessage: string = '';
+
+            // Verificar o status da mensagem
+            const checkMessage: MessageInstance = await client.messages(message.sid).fetch();
+
+            whatsAppStatusMessage = WhatsappMessageStatus[checkMessage.status.toUpperCase()];
+            Logger.log('[Service][Twillio][WhatsApp][sendWhatsappMessageAtualizacaoCadastralWithTwilio] - messageStatus: ', JSON.stringify(whatsAppStatusMessage));
+
+            Logger.log('[Service][Twillio][WhatsApp][sendWhatsappMessageAtualizacaoCadastralWithTwilio] - finished');
+            return whatsAppStatusMessage;
+
+        } catch (e) {
+            Logger.log(`> [Service][Twillio][WhatsApp][sendWhatsappMessageAtualizacaoCadastralWithTwilio] catch: ${e['message']}`);
             throw new BadRequestException(
                 `Erro ao enviar menssagem de whatsapp com Twilio: ${e.message}`,
             );

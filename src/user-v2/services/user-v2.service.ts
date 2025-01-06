@@ -767,7 +767,7 @@ export class UserV2Service {
                 throw new NotFoundException('Membro não encontrado!');
             }
 
-            const photoFileKey: string = user.foto && user.foto.length > 0 ? user.foto.split('.amazonaws.com/')[1] : '';
+            const photoFileKey: string = user.foto && user.foto.length > 0 ? user.foto : '';
 
             if (photoFileKey != '') {
                 await this.uploadService.deleteObject(photoFileKey);
@@ -814,6 +814,12 @@ export class UserV2Service {
 
                 // Construção do link de atualização
                 const linkAtualizacao: string = `${process.env.APPLICATION_URL_PROD}/member?id=${user._id.toString()}`;
+
+                await this.twilioMessagingService.sendWhatsappMessageAtualizacaoCadastralWithTwilio({
+                    linkAtualizacao: linkAtualizacao,
+                    numeroWhatsapp: user.telefone,
+                    nome: user.nome,
+                });
 
                 // Geração do HTML do e-mail
                 const html: string = this.generateUpdateEmailHtml(linkAtualizacao);

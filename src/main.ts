@@ -35,8 +35,8 @@ async function bootstrap() {
 
   app.enableCors();
 
-    app.use(bodyParser.json({ limit: '300mb' }));
     app.use(bodyParser.urlencoded({ limit: '300mb', extended: true }));
+    app.use(bodyParser.json({ limit: '300mb' }));
 
   const swaggerDocument = SwaggerModule.createDocument(
       app,
