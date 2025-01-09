@@ -695,7 +695,7 @@ export class UserV2Service {
         return saved;
     }
 
-    async update(id: string, data: any): Promise<UserV2Entity> {
+    async update(id: string, data: any, password?: string): Promise<UserV2Entity> {
         Logger.log(`> [Service][User V2][PUT][update] init`);
         Logger.log(`> [Service][User V2][PUT][update][id] - ${id}`);
 
@@ -744,6 +744,10 @@ export class UserV2Service {
             for (const providerAuth of updatedUser.autenticacao.providersInfo) {
                 Logger.debug(`> [Service][User V2][GET][updatedUser] - Member ID: ${providerAuth.uid.toString() ?? "N/A"}, ROLE: ${updatedUser.role ?? "N/A"}, MONGOID: ${updatedUser._id ?? "N/A"}`);
                 await this.authService.setCustomClaimsForUser(providerAuth.uid, updatedUser.role, updatedUser._id);
+
+                if (password && password.length > 0) {
+                    await this.authService.updatePassword(providerAuth.uid, password);
+                }
             }
 
             // Logger.log(`> [Service][User V2][PUT][update][updatedUser] - ${JSON.stringify(updatedUser)}`);
@@ -800,7 +804,7 @@ export class UserV2Service {
         }
     }
 
-    async requestUpdate(data: RequestUpdateV2Dto): Promise<string> {
+    async requestUpdate(data: RequestUpdateV2Dto, requestPassword: boolean = false): Promise<string> {
         Logger.log(`> [Service][User V2][POST][requestUpdate] - init`);
         try {
             for (const id of data._id) {
@@ -813,7 +817,7 @@ export class UserV2Service {
                 }
 
                 // Construção do link de atualização
-                const linkAtualizacao: string = `${process.env.APPLICATION_URL_PROD}/member?id=${user._id.toString()}`;
+                const linkAtualizacao: string = `${process.env.APPLICATION_URL_PROD}/member?id=${user._id.toString()}&requestPassword=${requestPassword}`;
 
                 await this.twilioMessagingService.sendWhatsappMessageAtualizacaoCadastralWithTwilio({
                     linkAtualizacao: linkAtualizacao,

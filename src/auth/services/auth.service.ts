@@ -168,6 +168,13 @@ export class AuthService {
         await auth.setCustomUserClaims(uid, {role, mongoId});
     }
 
+    async updatePassword(uid: string, password: string) {
+        const auth = admin.auth(firebaseApp);
+        Logger.debug(`> [Service][Auth][updatePassword]`);
+
+        await auth.updateUser(uid, {password})
+    }
+
     async sendEmailResetEmail(data: SendEmailDto, link: string) {
         Logger.log(`> [Service][Auth][sendEmailResetEmail] - init`);
         Logger.log(`> [Service][Auth][sendEmailResetEmail] data - ${JSON.stringify(data)}`);

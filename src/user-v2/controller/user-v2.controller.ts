@@ -168,13 +168,16 @@ export class UserV2Controller {
         return { url: fileUrl };
     }
 
-    @Put(':id')
+    @Put(':id/:password')
     @HttpCode(HttpStatus.OK)
     @ApiResponse({status: HttpStatus.NO_CONTENT, type: UserV2Entity})
-    async update(@Param('id') id: string, @Body() data: UpdateUserV2Dto): Promise<UserV2Entity> {
+    async update(
+        @Param('id') id: string,
+        @Param('password') password: string,
+        @Body() data: UpdateUserV2Dto): Promise<UserV2Entity> {
         Logger.log(``);
         Logger.log(`> [Controller][User V2][PUT][Update] - init`);
-        return this.userV2Service.update(id, data);
+        return this.userV2Service.update(id, data, password);
     }
 
     @Delete(':id')
@@ -217,13 +220,13 @@ export class UserV2Controller {
         return this.userV2Service.acceptInvite(inviteId, password, data);
     }
 
-    @Post('request-update')
+    @Post('request-update/:requestPassword')
     @HttpCode(HttpStatus.CREATED)
     @ApiResponse({status: HttpStatus.CREATED})
-    async requestUpdate(@Body() data: RequestUpdateV2Dto) {
+    async requestUpdate(@Body() data: RequestUpdateV2Dto, @Param('requestPassword') requestPassword: boolean) {
         Logger.log(``);
         Logger.log(`> [Controller][User V2][POST][requestUpdate] - init`);
-        return this.userV2Service.requestUpdate(data);
+        return this.userV2Service.requestUpdate(data, requestPassword);
     }
 
     @Post('/whatsapp/send-message')
