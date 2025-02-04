@@ -7,7 +7,7 @@ import {EmailService} from "../../user/service/email.service";
 import {AuthService} from "../../auth/services/auth.service";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {formatCPF, formatNome, formatTelefone, gerarHistorico} from "../../common/helpers/helpers";
-import {Historico, IMember} from "../domain/entity/abstractions/user-v2.abstraction";
+import {CivilStateEnumV2, Historico, IMember} from "../domain/entity/abstractions/user-v2.abstraction";
 import {CreateUserV2Dto} from "../dto/create-user-v2.dto";
 import {EstadoCivilEnum, Providers, StatusEnum, UserRoles} from "../../user/domain/entity/abstractions/user";
 import {validateCPFLength} from "../../common/validations/cpf";
@@ -447,7 +447,7 @@ export class UserV2Service {
                         diacono: diacono,
                         endereco: member.endereco,
                         status: member.status,
-                        ministerio: member.ministerio,
+                        ministerio: member && member.ministerio ? member.ministerio : [],
 
                         informacoesPessoais: {
                             casamento: member.informacoesPessoais.casamento,
@@ -486,17 +486,32 @@ export class UserV2Service {
     async create(data: CreateUserV2Dto) {
         Logger.log(`> [Service][User V2][POST][Create] - init`);
 
+        let user: UserV2Entity = new UserV2Entity();
+        let userFirebase;
+
         try {
-            const user = await this.userV2Repository.findByEmail(data.email);
+            if (data && data.email && data.email.length > 0) {
+                user = await this.userV2Repository.findByEmail(data.email);
+                userFirebase = await this.authService.findUserByEmail(data.email);
 
-            const userFirebase = await this.authService.findUserByEmail(data.email);
+                if (user) {
+                    throw new BadRequestException('Email já em uso!');
+                }
 
-            if (user) {
-                throw new BadRequestException('Email já em uso!');
-            }
+                if (userFirebase) {
+                    throw new BadRequestException('Email já em uso no Firebase!');
+                }
+            } else if (data && data.telefone && data.telefone.length > 0) {
+                user = await this.userV2Repository.findByTelefone(formatPhoneNumber(data.telefone));
+                userFirebase = await this.authService.findUserByPhoneNumber(formatPhoneNumber(data.telefone));
 
-            if (userFirebase) {
-                throw new BadRequestException('Email já em uso no Firebase!');
+                if (user) {
+                    throw new BadRequestException('Telefone já em uso!');
+                }
+
+                if (userFirebase) {
+                    throw new BadRequestException('Telefone já em uso no Firebase!');
+                }
             }
 
             return await this.createUserUniversal(data);
@@ -512,20 +527,64 @@ export class UserV2Service {
         }
     }
 
+    async createMany(data: CreateUserV2Dto[]) {
+        Logger.log(`> [Service][User V2][POST][createMany] - init`);
+
+        const createUsers: UserV2Entity[] = [];
+        const createdUsers: UserV2Entity[] = [];
+
+        for (const user of data) {
+            try {
+                createUsers.push(user as UserV2Entity);
+            } catch (error) {
+                Logger.log(`Erro ao tratar usuário ${JSON.stringify(user)} - ${error?.message}`);
+            }
+        }
+
+        Logger.debug(createUsers)
+
+        for (const userData of createUsers) {
+            try {
+                const newUser: UserV2Entity = await this.create(userData);
+                createdUsers.push(newUser);
+            } catch (error) {
+                Logger.log(`Erro ao criar usuário ${JSON.stringify(userData)} - ${error?.message}`);
+            }
+        }
+
+        return createdUsers;
+    }
+
+
     async acceptInvite(inviteId: string, password: string, data: CreateUserV2Dto): Promise<UserV2Entity> {
         Logger.log(`> [Service][User V2][POST][acceptInvite] - init`);
 
+        let user: UserV2Entity = new UserV2Entity();
+        let userFirebase;
+
         try {
-            const user = await this.userV2Repository.findByEmail(data.email);
+            if (data && data.email && data.email.length > 0) {
+                user = await this.userV2Repository.findByEmail(data.email);
+                userFirebase = await this.authService.findUserByEmail(data.email);
 
-            const userFirebase = await this.authService.findUserByEmail(data.email);
+                if (user) {
+                    throw new BadRequestException('Email já em uso!');
+                }
 
-            if (user) {
-                throw new BadRequestException('Email já em uso!');
-            }
+                if (userFirebase) {
+                    throw new BadRequestException('Email já em uso no Firebase!');
+                }
+            } else if (data && data.telefone && data.telefone.length > 0) {
+                user = await this.userV2Repository.findByTelefone(formatPhoneNumber(data.telefone));
+                userFirebase = await this.authService.findUserByPhoneNumber(formatPhoneNumber(data.telefone));
 
-            if (userFirebase) {
-                throw new BadRequestException('Email já em uso no Firebase!');
+                if (user) {
+                    throw new BadRequestException('Telefone já em uso!');
+                }
+
+                if (userFirebase) {
+                    throw new BadRequestException('Telefone já em uso no Firebase!');
+                }
             }
 
             const invite: InviteV2Entity = await this.inviteV2Repository.findById(inviteId);
@@ -588,6 +647,14 @@ export class UserV2Service {
             validateCPFLength(data.cpf);
         }
 
+        if (data && data.email.length === 0) {
+            data.email = '';
+        }
+
+        if (data && data.telefone.length === 0) {
+            data.telefone = '';
+        }
+
         let diacono: IMember = {} as IMember;
 
         if (data && data.diacono && data.diacono.id && data.diacono.id.length === 24) {
@@ -600,7 +667,7 @@ export class UserV2Service {
 
         const user: UserV2Entity = new UserV2Entity();
         user.cpf = data.cpf;
-        user.nome = data.nome;
+        user.nome = formatNome(data.nome);
         user.rg = data.rg;
         user.telefone = data.telefone;
         user.role = data.role;
@@ -608,38 +675,38 @@ export class UserV2Service {
         user.ministerio = data.ministerio;
         user.dataNascimento = data.dataNascimento;
         user.diacono = diacono;
-        user.email = data.email;
+        user.email = data.email.toLowerCase();
         user.endereco = data.endereco;
         user.exclusao = {
-            data: data.exclusao.data,
-            motivo: data.exclusao.motivo
+            data: data && data.exclusao && data.exclusao.data ? data.exclusao.data : null,
+            motivo: data && data.exclusao && data.exclusao.motivo ? data.exclusao.motivo : null
         };
         user.falecimento = {
-            data: data.falecimento.data,
-            local: data.falecimento.local,
-            motivo: data.falecimento.motivo
+            data: data && data.falecimento && data.falecimento.data ? data.falecimento.data : null,
+            local: data && data.falecimento && data.falecimento.local ? data.falecimento.local : null,
+            motivo: data && data.falecimento && data.falecimento.motivo ? data.falecimento.motivo : null
         };
         user.informacoesPessoais = {
             casamento: {
-                conjugue: data.informacoesPessoais.casamento.conjugue,
-                dataCasamento: data.informacoesPessoais.casamento.dataCasamento
+                conjugue: data && data.informacoesPessoais && data.informacoesPessoais.casamento && data.informacoesPessoais.casamento.conjugue ? data.informacoesPessoais.casamento.conjugue : null,
+                dataCasamento: data && data.informacoesPessoais && data.informacoesPessoais.casamento && data.informacoesPessoais.casamento.dataCasamento ? data.informacoesPessoais.casamento.dataCasamento : null
             },
-            estadoCivil: data.informacoesPessoais.estadoCivil,
-            filhos: data.informacoesPessoais.filhos,
-            temFilhos: data.informacoesPessoais.temFilhos,
+            estadoCivil: data && data.informacoesPessoais && data.informacoesPessoais.estadoCivil ? data.informacoesPessoais.estadoCivil : CivilStateEnumV2.solteiro,
+            filhos: data && data.informacoesPessoais && data.informacoesPessoais.filhos ? data.informacoesPessoais.filhos : [],
+            temFilhos: data && data.informacoesPessoais && data.informacoesPessoais.temFilhos ? data.informacoesPessoais.temFilhos : false,
         };
         user.ingresso = {
-            data: data.ingresso.data,
-            forma: data.ingresso.forma,
-            local: data.ingresso.local,
+            data: data && data.ingresso && data.ingresso.data ? data.ingresso.data : null,
+            forma: data && data.ingresso && data.ingresso.forma ? data.ingresso.forma : null,
+            local: data && data.ingresso && data.ingresso.local ? data.ingresso.local : null,
         }
         user.transferencia = {
-            data: data.transferencia.data,
-            local: data.transferencia.local,
-            motivo: data.transferencia.motivo,
+            data: data && data.transferencia && data.transferencia.data ? data.transferencia.data : null,
+            local: data && data.transferencia && data.transferencia.local ? data.transferencia.local : null,
+            motivo: data && data.transferencia && data.transferencia.motivo ? data.transferencia.motivo : null,
         };
         user.visitas = {
-            motivo: data.visitas.motivo
+            motivo: data && data.visitas && data.visitas.motivo ? data.visitas.motivo : null
         }
 
         user.foto = data.foto ? data.foto : '';
@@ -674,7 +741,7 @@ export class UserV2Service {
                 const userFirebase = await this.authService.registerUser(savedFirebase, password);
 
                setTimeout(async () => {
-                   await this.update(saved._id, {
+                   await this.updateWithNoPassword(saved._id, {
                        autenticacao: {
                            providersInfo: [{
                                providerId: Providers.password,
@@ -695,9 +762,10 @@ export class UserV2Service {
         return saved;
     }
 
-    async update(id: string, data: any, password?: string): Promise<UserV2Entity> {
-        Logger.log(`> [Service][User V2][PUT][update] init`);
-        Logger.log(`> [Service][User V2][PUT][update][id] - ${id}`);
+    async updateWithPassword(id: string, data: any, password: string): Promise<UserV2Entity> {
+        Logger.log(`> [Service][User V2][PUT][updateWithPassword] init`);
+        Logger.log(`> [Service][User V2][PUT][updateWithPassword][id] - ${id}`);
+        Logger.log(`> [Service][User V2][PUT][updateWithPassword][password] - ${password}`);
 
         try {
             const user: UserV2Entity = await this.userV2Repository.findById(id);
@@ -706,28 +774,57 @@ export class UserV2Service {
                 throw new NotFoundException('Membro não encontrado!');
             }
 
-            // const historico: Historico[] = [];
-            //
-            // // Filtrar apenas os campos que mudaram
-            // const updatedData = Object.keys(data).reduce((acc, key) => {
-            //     if (JSON.stringify(data[key]) !== JSON.stringify(user[key])) {
-            //         acc[key] = data[key];
-            //         if (key !== 'autenticacao') {
-            //             historico.push({
-            //                 chave: key,
-            //                 antigo: user[key],
-            //                 novo: data[key],
-            //                 updatedAt: new Date()
-            //             })
-            //         }
-            //     }
-            //     return {...acc, updatedAt: new Date(), historico: [...historico, ...user.historico]};
-            // }, {});
+            const changes: Historico[] = gerarHistorico(user, data);
+            // Faz o merge do histórico antigo com o novo
+            data.historico = [...user.historico, ...changes];
+            data.updatedAt = new Date();
 
-            // if (Object.keys(updatedData).length === 0) {
-            //     Logger.log(`> [Service][User V2][PUT][update] No changes detected`);
-            //     return user; // Retorna o usuário sem alterações
-            // }
+            // Realizar o update diretamente no banco
+            const updatedUserMongoDb = await this.userV2Repository.update(id, data);
+
+            // Retornar o estado atualizado do usuário
+            const updatedUser: UserV2Entity = await this.userV2Repository.findById(id);
+
+            // Realizar o update no firebase
+            const savedFirebase = {
+                mongoId: updatedUserMongoDb.raw._id,
+                name: updatedUserMongoDb.raw.nome,
+                email: updatedUserMongoDb.raw.email,
+                role: updatedUserMongoDb.raw.role,
+                phoneNumber: updatedUserMongoDb.raw.telefone,
+            };
+
+            // Atualizar CustomClaims do Firebase
+            for (const providerAuth of updatedUser.autenticacao.providersInfo) {
+                Logger.debug(`> [Service][User V2][UPDATE][updateWithPassword] - Member ID: ${providerAuth.uid.toString() ?? "N/A"}, ROLE: ${updatedUser.role ?? "N/A"}, MONGOID: ${updatedUser._id ?? "N/A"}`);
+
+                await this.authService.updateUser(savedFirebase, providerAuth.uid);
+
+                if (password && password.length > 0) {
+                    await this.authService.updatePassword(providerAuth.uid, password);
+                }
+            }
+
+            return updatedUser!;
+        } catch (e) {
+            Logger.log(`> [Service][User V2][PUT][update] catch - ${e.stack}`);
+            if (e['message'].includes('E11000 duplicate key error collection')) {
+                throw new BadRequestException('Houve uma falha ao atualizar o membro, tente novamente.');
+            }
+            throw new BadRequestException(e['message']);
+        }
+    }
+
+    async updateWithNoPassword(id: string, data: any): Promise<UserV2Entity> {
+        Logger.log(`> [Service][User V2][PUT][updateWithNoPassword] init`);
+        Logger.log(`> [Service][User V2][PUT][updaupdateWithNoPasswordte][id] - ${id}`);
+
+        try {
+            const user: UserV2Entity = await this.userV2Repository.findById(id);
+
+            if (!user) {
+                throw new NotFoundException('Membro não encontrado!');
+            }
 
             const changes: Historico[] = gerarHistorico(user, data);
             // Faz o merge do histórico antigo com o novo
@@ -735,25 +832,31 @@ export class UserV2Service {
             data.updatedAt = new Date();
 
             // Realizar o update diretamente no banco
-            await this.userV2Repository.update(id, data);
+            const updatedUserMongoDb = await this.userV2Repository.update(id, data);
 
             // Retornar o estado atualizado do usuário
             const updatedUser: UserV2Entity = await this.userV2Repository.findById(id);
 
-            // Atualizar CustomClaims do Firebase
-            for (const providerAuth of updatedUser.autenticacao.providersInfo) {
-                Logger.debug(`> [Service][User V2][GET][updatedUser] - Member ID: ${providerAuth.uid.toString() ?? "N/A"}, ROLE: ${updatedUser.role ?? "N/A"}, MONGOID: ${updatedUser._id ?? "N/A"}`);
-                await this.authService.setCustomClaimsForUser(providerAuth.uid, updatedUser.role, updatedUser._id);
+            // Realizar o update no firebase
+            const savedFirebase = {
+                mongoId: updatedUserMongoDb.raw._id,
+                name: updatedUserMongoDb.raw.nome,
+                email: updatedUserMongoDb.raw.email,
+                role: updatedUserMongoDb.raw.role,
+                phoneNumber: updatedUserMongoDb.raw.telefone,
+            };
 
-                if (password && password.length > 0) {
-                    await this.authService.updatePassword(providerAuth.uid, password);
-                }
+            // Atualizar no Firebase
+            for (const providerAuth of updatedUser.autenticacao.providersInfo) {
+                Logger.debug(`> [Service][User V2][UPDATE][updateWithNoPassword] - Member ID: ${providerAuth.uid.toString() ?? "N/A"}, ROLE: ${updatedUser.role ?? "N/A"}, MONGOID: ${updatedUser._id ?? "N/A"}`);
+                // await this.authService.setCustomClaimsForUser(providerAuth.uid, updatedUser.role, updatedUser._id);
+                await this.authService.updateUser(savedFirebase, providerAuth.uid);
             }
 
-            // Logger.log(`> [Service][User V2][PUT][update][updatedUser] - ${JSON.stringify(updatedUser)}`);
             return updatedUser!;
         } catch (e) {
-            Logger.log(`> [Service][User V2][PUT][update] catch - ${e.stack}`);
+            Logger.error(e.stack)
+            Logger.log(`> [Service][User V2][PUT][updateWithNoPassword] catch - ${e.stack}`);
             if (e['message'].includes('E11000 duplicate key error collection')) {
                 throw new BadRequestException('Houve uma falha ao atualizar o membro, tente novamente.');
             }

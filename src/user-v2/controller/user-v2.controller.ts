@@ -7,7 +7,7 @@ import {
     HttpCode,
     HttpStatus,
     Logger,
-    Param,
+    Param, Patch,
     Post,
     Put,
     UploadedFile
@@ -152,6 +152,15 @@ export class UserV2Controller {
         return this.userV2Service.create(data);
     }
 
+    @Post('/create-many')
+    @HttpCode(HttpStatus.CREATED)
+    @ApiResponse({status: HttpStatus.CREATED, type: [UserV2Entity]})
+    async createMany(@Body() data: CreateUserV2Dto[]): Promise<UserV2Entity[]> {
+        Logger.log(``);
+        Logger.log(`> [Controller][User V2][POST][createMany] - init`);
+        return this.userV2Service.createMany(data);
+    }
+
     @Post('photo')
     @HttpCode(HttpStatus.CREATED)
     @ApiResponse({status: HttpStatus.CREATED})
@@ -177,7 +186,18 @@ export class UserV2Controller {
         @Body() data: UpdateUserV2Dto): Promise<UserV2Entity> {
         Logger.log(``);
         Logger.log(`> [Controller][User V2][PUT][Update] - init`);
-        return this.userV2Service.update(id, data, password);
+        return this.userV2Service.updateWithPassword(id, data, password);
+    }
+
+    @Patch('/no-password/:id')
+    @HttpCode(HttpStatus.OK)
+    @ApiResponse({status: HttpStatus.NO_CONTENT, type: UserV2Entity})
+    async updateWithNoPassword(
+        @Param('id') id: string,
+        @Body() data: UpdateUserV2Dto): Promise<UserV2Entity> {
+        Logger.log(``);
+        Logger.log(`> [Controller][User V2][PUT][updateWithNoPassword] - init`);
+        return this.userV2Service.updateWithNoPassword(id, data);
     }
 
     @Delete(':id')

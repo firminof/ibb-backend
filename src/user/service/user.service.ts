@@ -1,7 +1,7 @@
 import {BadRequestException, Injectable, Logger, NotFoundException} from "@nestjs/common";
-import {UserEntity} from "../domain/entity/user.entity";
 import {EventEmitter2, OnEvent} from "@nestjs/event-emitter";
 import {UserV2Repository} from "../../user-v2/repository/user-v2.repository";
+import {UserV2Entity} from "../../user-v2/domain/entity/user-v2.entity";
 
 @Injectable()
 export class UserService {
@@ -16,7 +16,7 @@ export class UserService {
         Logger.log(`> [Service][User][forgetPassword] init`);
         Logger.log(`> [Service][User][forgetPassword] - email: ${data.email}`);
         try {
-            const user: UserEntity = await this.userRepository.findByEmail(data.email);
+            const user: UserV2Entity = await this.userRepository.findByEmail(data.email);
             Logger.log(`> [Service][User][forgetPassword][findByEmail] - ${JSON.stringify(user)}`);
 
             if (!user) {

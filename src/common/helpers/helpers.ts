@@ -1,4 +1,5 @@
 import {Historico, UserV2} from "../../user-v2/domain/entity/abstractions/user-v2.abstraction";
+import {Logger} from "@nestjs/common";
 
 
 export const formatDataHoraPtbr = (data_iso: Date): string => {
@@ -41,9 +42,9 @@ export const formatTelefone = (telefone): string => {
 }
 
 export const formatNome = (nome: string) => {
-    return nome.toLowerCase().split(' ').map(function (palavra) {
+    return nome && nome.toString().length > 0 ? nome.toLowerCase().split(' ').map(function (palavra) {
         return palavra.charAt(0).toUpperCase() + palavra.slice(1);
-    }).join(' ');
+    }).join(' ') : nome;
 }
 
 export const formatToInternationalStandard = (phone: string) => {

@@ -2,7 +2,7 @@ import {BadRequestException, Injectable, Logger, NotFoundException} from '@nestj
 import * as admin from 'firebase-admin';
 import {EventEmitter2} from '@nestjs/event-emitter';
 import {firebaseApp} from "../config/firebase.config";
-import {CreateRequest} from "firebase-admin/lib/auth";
+import {CreateRequest, UpdateRequest} from "firebase-admin/lib/auth";
 import {formatNome} from "../../common/helpers/helpers";
 import {UserEntity} from "../../user/domain/entity/user.entity";
 import {SendEmailDto} from "../../user/dto/send-email.dto";
@@ -44,12 +44,18 @@ export class AuthService {
                 emailVerified = true;
             }
 
-            const userFirebase: CreateRequest = {
-                email: userInfo.email,
+            let userFirebase: CreateRequest = {
                 password: randomPassword,
-                // phoneNumber: userInfo.phoneNumber && userInfo.phoneNumber.length > 0 ? userInfo.phoneNumber : '',
                 displayName: formatNome(userInfo.name),
                 emailVerified,
+            }
+
+            if (userInfo && userInfo.email.length > 0) {
+                userFirebase.email = userInfo.email;
+            }
+
+            if (userInfo && userInfo.phoneNumber.length > 0) {
+                userFirebase.phoneNumber = userInfo.phoneNumber && userInfo.phoneNumber.length > 0 ? userInfo.phoneNumber : ''
             }
 
             const userRecord = await auth.createUser(userFirebase);
@@ -59,12 +65,44 @@ export class AuthService {
                 mongoId: userInfo.mongoId,
             });
 
-            // const passwordResetLink = await auth.generatePasswordResetLink(
-            //     userInfo.email,
-            // );
+            return userRecord;
+        } catch (e) {
+            Logger.error(e);
+            if (e.message.toString().includes('The user with the provided phone number already exists')) {
+                throw new BadRequestException('Número de telefone já cadastrado, tente com outro.');
+            }
+            throw new BadRequestException(`Erro no firebase: ${e.message}`);
+        }
+    }
+
+    async updateUser(userInfo: UserInfo, uid: string) {
+        Logger.log(`> [Service][Auth][updateUser]] - init`);
+        try {
+            const auth = admin.auth(firebaseApp);
+
+            let userFirebase: UpdateRequest = {
+                displayName: formatNome(userInfo.name),
+            }
+
+            if (userInfo && userInfo.email && userInfo.email.toString().length > 0) {
+                userFirebase.email = userInfo.email;
+            }
+
+            if (userInfo && userInfo.phoneNumber && userInfo.phoneNumber.toString().length > 0) {
+                userFirebase.phoneNumber = userInfo.phoneNumber && userInfo.phoneNumber.length > 0 ? userInfo.phoneNumber : ''
+            }
+
+            const userRecord = await auth.updateUser(uid, userFirebase);
+
+            await auth.setCustomUserClaims(userRecord.uid, {
+                role: userInfo.role,
+                mongoId: userInfo.mongoId,
+            });
 
             return userRecord;
         } catch (e) {
+            Logger.error(e);
+            Logger.error(e.stack)
             if (e.message.toString().includes('The user with the provided phone number already exists')) {
                 throw new BadRequestException('Número de telefone já cadastrado, tente com outro.');
             }
@@ -142,6 +180,24 @@ export class AuthService {
 
         try {
             returnData = await auth.getUserByEmail(email);
+        } catch (error) {
+            console.log(JSON.stringify(error));
+            throw new BadRequestException(`Erro inesperado: ${error.errorInfo.message}`);
+            // if (error.errorInfo.message.toString().includes('There is no user record corresponding to the provided identifier')) {
+            //     throw new BadRequestException(`Membro não cadastrado, solicite um convite para fazer parte da nossa comunidade`);
+            // }
+        }
+
+        return returnData;
+    }
+
+    async findUserByPhoneNumber(phone: string) {
+        Logger.log(`> [Service][Auth][POST][findUserByPhoneNumber] - init`);
+        const auth = admin.auth(firebaseApp);
+        let returnData;
+
+        try {
+            returnData = await auth.getUserByPhoneNumber(phone);
         } catch (error) {
             console.log(JSON.stringify(error));
             throw new BadRequestException(`Erro inesperado: ${error.errorInfo.message}`);

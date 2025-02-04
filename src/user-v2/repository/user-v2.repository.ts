@@ -1,6 +1,7 @@
 import {Injectable} from "@nestjs/common";
 import {DataSource, Repository} from "typeorm";
 import {UserV2Entity} from "../domain/entity/user-v2.entity";
+import {formatPhoneNumber} from "../../common/validations/telefone";
 
 @Injectable()
 export class UserV2Repository extends Repository<UserV2Entity> {
@@ -56,10 +57,21 @@ export class UserV2Repository extends Repository<UserV2Entity> {
         return this.remove(user);
     }
 
-    async findByEmail(email: string): Promise<any> {
+    async findByEmail(email: string): Promise<UserV2Entity> {
         const users: UserV2Entity[] = await this.find({
             where: {
                 email,
+            },
+        });
+
+        return users[0];
+    }
+
+    async findByTelefone(telefone: string): Promise<UserV2Entity> {
+        // const regexTelefone = new RegExp(telefone, 'gi');
+        const users: UserV2Entity[] = await this.find({
+            where: {
+                telefone,
             },
         });
 

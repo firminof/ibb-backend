@@ -83,7 +83,7 @@ export class CreateUserV2Dto {
         description: 'CPF do usuário',
         example: '123.456.789-00',
     })
-    @IsNotEmpty({ message: 'O CPF é obrigatório.' })
+    // @IsNotEmpty({ message: 'O CPF é obrigatório.' })
     cpf: string;
 
     // RG do usuário
@@ -92,7 +92,7 @@ export class CreateUserV2Dto {
         description: 'RG do usuário',
         example: '12.345.678-9',
     })
-    @IsNotEmpty({ message: 'O RG é obrigatório.' })
+    // @IsNotEmpty({ message: 'O RG é obrigatório.' })
     rg: string;
 
     // Email do usuário
@@ -101,8 +101,6 @@ export class CreateUserV2Dto {
         description: 'Email do usuário',
         example: 'maria@example.com',
     })
-    @IsEmail({}, { message: 'O email deve ser válido.' })
-    @IsNotEmpty({ message: 'O email é obrigatório.' })
     email: string;
 
     // Telefone do usuário
@@ -111,8 +109,6 @@ export class CreateUserV2Dto {
         description: 'Telefone do usuário',
         example: '+55 11 98765-4321',
     })
-    @IsString()
-    @IsNotEmpty({ message: 'O telefone é obrigatório.' })
     telefone: string;
 
     // Data de nascimento do usuário
