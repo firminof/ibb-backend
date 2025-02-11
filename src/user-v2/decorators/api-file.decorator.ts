@@ -33,6 +33,12 @@ export function ApiImageFile(fieldName: string, required: boolean = true) {
   });
 }
 
+export function ApiCsvFile(fieldName: string, required: boolean = true) {
+  return ApiFile(fieldName, required, {
+    fileFilter: fileMimetypeFilter('csv'),
+  });
+}
+
 
 export function fileMimetypeFilter(...mimetypes: string[]) {
   return (

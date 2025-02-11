@@ -7,7 +7,8 @@ import {
     HttpCode,
     HttpStatus,
     Logger,
-    Param, Patch,
+    Param,
+    Patch,
     Post,
     Put,
     UploadedFile
@@ -23,9 +24,10 @@ import {InviteV2Entity} from "../domain/entity/invite-v2.entity";
 import {RequestUpdateV2Dto} from "../dto/request-update-v2.dto";
 import {TwilioWhatsappInputDto} from "../../common/dto/twillio-whatsapp.dto";
 import {TwilioMessagingService} from "../../common/services/twilio-messaging.service";
-import {ApiImageFile} from "../decorators/api-file.decorator";
+import {ApiCsvFile, ApiImageFile} from "../decorators/api-file.decorator";
 import {ParseFile} from "../decorators/parse-file.decorator";
 import {UploadService} from "../services/upload.service";
+import {UserV2} from "../domain/entity/abstractions/user-v2.abstraction";
 
 @Controller('v2/user')
 @ApiTags('User V2')
@@ -175,6 +177,21 @@ export class UserV2Controller {
 
         const fileUrl = await this.uploadService.uploadFile(file);
         return { url: fileUrl };
+    }
+
+    @Post('/csv/planilha')
+    @HttpCode(HttpStatus.CREATED)
+    @ApiResponse({status: HttpStatus.CREATED})
+    @ApiCsvFile('file', true)
+    async uploadCsv(@UploadedFile(ParseFile) file): Promise<UserV2[]> {
+        Logger.log(``);
+        Logger.log(`> [Controller][User V2][POST][uploadCsv] - init`);
+
+        if (!file) {
+            throw new BadRequestException('Nenhum arquivo foi enviado.');
+        }
+
+        return await this.uploadService.uploadCsv(file);
     }
 
     @Put(':id/:password')
