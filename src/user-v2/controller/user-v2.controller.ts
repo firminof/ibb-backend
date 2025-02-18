@@ -222,8 +222,17 @@ export class UserV2Controller {
     @ApiResponse({status: HttpStatus.OK})
     async delete(@Param() params: DeleteUserV2Dto): Promise<boolean> {
         Logger.log(``);
-        Logger.log(`> [Controller][User V2][DELETE][Update] - init`);
+        Logger.log(`> [Controller][User V2][DELETE][byId] - init`);
         return this.userV2Service.delete(params);
+    }
+
+    @Delete('/delete/many')
+    @HttpCode(HttpStatus.OK)
+    @ApiResponse({status: HttpStatus.OK})
+    async deleteMany(): Promise<any[]> {
+        Logger.log(``);
+        Logger.log(`> [Controller][User V2][DELETE][deleteMany] - init`);
+        return this.userV2Service.deleteMany();
     }
 
     @Delete('/invite/:id')

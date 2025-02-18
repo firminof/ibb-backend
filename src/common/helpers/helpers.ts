@@ -27,19 +27,38 @@ export const formatCPF = (cpf: string): string => {
     return ''
 };
 
-export const formatTelefone = (telefone): string => {
+export const formatTelefone = (telefone: string): string => {
     // Remover qualquer caractere que não seja número
     const telefoneLimpo = telefone.replace(/\D/g, '');
 
-    // Verificar se o telefone tem 10|11 dígitos (incluindo o DDD)
-    if (telefoneLimpo.length === 10 || telefoneLimpo.length === 11) {
-        // Formatando o telefone com os parênteses e o hífen
-        return `(${telefoneLimpo.slice(0, 2)}) ${telefoneLimpo.slice(2, 7)}-${telefoneLimpo.slice(7)}`;
-    } else {
-        // Retornar erro se o telefone for inválido
+    // Verificar se o telefone inclui DDI (código do país)
+    const temDDI = telefoneLimpo.length > 11;
+    let ddi = '';
+    let ddd = '';
+    let numero = '';
+
+    if (telefoneLimpo.length === 0) {
         return '';
     }
-}
+
+    if (temDDI) {
+        ddi = `+${telefoneLimpo.slice(0, telefoneLimpo.length - 11)}`;
+        ddd = telefoneLimpo.slice(-11, -9);
+        numero = telefoneLimpo.slice(-9);
+    } else {
+        ddd = telefoneLimpo.slice(0, 2);
+        numero = telefoneLimpo.slice(2);
+    }
+
+    // Formatar número com ou sem DDI
+    const numeroFormatado =
+        numero.length === 9
+            ? `${numero.slice(0, 5)}-${numero.slice(5)}`
+            : `${numero.slice(0, 4)}-${numero.slice(4)}`;
+
+    return `(${ddd}) ${numeroFormatado}`;
+    // return temDDI ? `${ddi} (${ddd}) ${numeroFormatado}` : `(${ddd}) ${numeroFormatado}`;
+};
 
 export const formatNome = (nome: string) => {
     return nome && nome.toString().length > 0 ? nome.toLowerCase().split(' ').map(function (palavra) {

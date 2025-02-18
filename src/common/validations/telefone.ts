@@ -3,6 +3,10 @@ import {Logger} from "@nestjs/common";
 export const formatPhoneNumber = (phone: string) => {
     // Remove qualquer caractere não numérico
     phone = phone.replace(/\D/g, '');
+
+    if (phone.length === 0){
+        return '';
+    }
     // Logger.log(`> [Validations][formatPhoneNumber] - ${phone}`);
 
     // Adiciona o código do país (+55) se o número tiver 11 ou 12 dígitos (para celular ou fixo com código do país)

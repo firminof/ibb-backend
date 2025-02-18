@@ -58,6 +58,7 @@ export class AuthService {
                 userFirebase.phoneNumber = userInfo.phoneNumber && userInfo.phoneNumber.length > 0 ? userInfo.phoneNumber : ''
             }
 
+            Logger.debug(userFirebase)
             const userRecord = await auth.createUser(userFirebase);
 
             await auth.setCustomUserClaims(userRecord.uid, {
@@ -67,6 +68,7 @@ export class AuthService {
 
             return userRecord;
         } catch (e) {
+            Logger.error(e.stack);
             Logger.error(e);
             if (e.message.toString().includes('The user with the provided phone number already exists')) {
                 throw new BadRequestException('Número de telefone já cadastrado, tente com outro.');
@@ -153,14 +155,14 @@ export class AuthService {
 
     async removeUserV2(user: UserV2Entity) {
         Logger.log(`> [Service][User V2][DELETE][removeUserV2] init`);
-        Logger.log(JSON.stringify(user));
+        // Logger.log(JSON.stringify(user));
         try {
             const uids: string[] = user.autenticacao.providersInfo.map((info) => info.uid);
 
-            uids.map((uid) => this.removeUserByUid(uid));
+            uids.map(async (uid) => await this.removeUserByUid(uid));
         } catch (e) {
             Logger.error(e);
-            throw new BadRequestException(`Erro no firebase: ${e.message}`);
+            // throw new BadRequestException(`Erro no firebase: ${e.message}`);
         }
     }
 
@@ -169,7 +171,7 @@ export class AuthService {
             const auth = admin.auth(firebaseApp);
             await auth.deleteUser(uid);
         } catch (e) {
-            throw new BadRequestException(`Erro no firebase: ${e.message}`);
+            // throw new BadRequestException(`Erro no firebase: ${e.message}`);
         }
     }
 

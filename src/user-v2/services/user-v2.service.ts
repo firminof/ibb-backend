@@ -439,6 +439,7 @@ export class UserV2Service {
                         nome: formatNome(member.nome),
                         rg: member.rg,
                         role: member.role,
+                        // telefone: member.telefone,
                         telefone: formatTelefone(member.telefone),
                         cpf: formatCPF(member.cpf),
                         email: member.email,
@@ -541,10 +542,12 @@ export class UserV2Service {
             }
         }
 
-        Logger.debug(createUsers)
+        // Logger.debug(createUsers)
 
         for (const userData of createUsers) {
             try {
+                await new Promise((resolve, reject) => {setTimeout(async () => {resolve(true)}, 3000)})
+
                 const newUser: UserV2Entity = await this.create(userData);
                 createdUsers.push(newUser);
             } catch (error) {
@@ -736,20 +739,23 @@ export class UserV2Service {
             phoneNumber,
         };
 
+        let updatedUser: UserV2Entity;
+
         if (saved) {
             try {
                 const userFirebase = await this.authService.registerUser(savedFirebase, password);
 
-               setTimeout(async () => {
-                   await this.updateWithNoPassword(saved._id, {
+                Logger.debug(userFirebase.uid);
+                setTimeout(async () => {
+                   updatedUser = await this.updateWithNoPassword(saved._id, {
                        autenticacao: {
                            providersInfo: [{
                                providerId: Providers.password,
                                uid: userFirebase.uid
                            }]
                        }
-                   })
-               }, 1500);
+                   }, true)
+                }, 1500);
             } catch (e) {
                 await this.userV2Repository.delete(saved._id);
                 throw new BadRequestException(
@@ -759,7 +765,7 @@ export class UserV2Service {
         }
 
         Logger.log(`> [Service][User V2][POST][Create] - finished`);
-        return saved;
+        return updatedUser;
     }
 
     async updateWithPassword(id: string, data: any, password: string): Promise<UserV2Entity> {
@@ -799,7 +805,7 @@ export class UserV2Service {
                 Logger.debug(`> [Service][User V2][UPDATE][updateWithPassword] - Member ID: ${providerAuth.uid.toString() ?? "N/A"}, ROLE: ${updatedUser.role ?? "N/A"}, MONGOID: ${updatedUser._id ?? "N/A"}`);
 
                 await this.authService.updateUser(savedFirebase, providerAuth.uid);
-
+                await this.authService.setCustomClaimsForUser(providerAuth.uid, updatedUser.role, updatedUser._id);
                 if (password && password.length > 0) {
                     await this.authService.updatePassword(providerAuth.uid, password);
                 }
@@ -815,7 +821,7 @@ export class UserV2Service {
         }
     }
 
-    async updateWithNoPassword(id: string, data: any): Promise<UserV2Entity> {
+    async updateWithNoPassword(id: string, data: any, isMassive?: boolean): Promise<UserV2Entity> {
         Logger.log(`> [Service][User V2][PUT][updateWithNoPassword] init`);
         Logger.log(`> [Service][User V2][PUT][updaupdateWithNoPasswordte][id] - ${id}`);
 
@@ -826,9 +832,12 @@ export class UserV2Service {
                 throw new NotFoundException('Membro não encontrado!');
             }
 
-            const changes: Historico[] = gerarHistorico(user, data);
-            // Faz o merge do histórico antigo com o novo
-            data.historico = [...user.historico, ...changes];
+            if (!isMassive){
+                const changes: Historico[] = gerarHistorico(user, data);
+                // Faz o merge do histórico antigo com o novo
+                data.historico = [...user.historico, ...changes];
+            }
+
             data.updatedAt = new Date();
 
             // Realizar o update diretamente no banco
@@ -849,10 +858,9 @@ export class UserV2Service {
             // Atualizar no Firebase
             for (const providerAuth of updatedUser.autenticacao.providersInfo) {
                 Logger.debug(`> [Service][User V2][UPDATE][updateWithNoPassword] - Member ID: ${providerAuth.uid.toString() ?? "N/A"}, ROLE: ${updatedUser.role ?? "N/A"}, MONGOID: ${updatedUser._id ?? "N/A"}`);
-                // await this.authService.setCustomClaimsForUser(providerAuth.uid, updatedUser.role, updatedUser._id);
                 await this.authService.updateUser(savedFirebase, providerAuth.uid);
+                await this.authService.setCustomClaimsForUser(providerAuth.uid, updatedUser.role, updatedUser._id);
             }
-
             return updatedUser!;
         } catch (e) {
             Logger.error(e.stack)
@@ -864,6 +872,45 @@ export class UserV2Service {
         }
     }
 
+    async deleteMany(): Promise<any[]> {
+        Logger.log(`> [Service][User V2][DELETE][deleteMany] init`);
+        try {
+            const deletedUsers: any[] = [];
+            const getAllMembers: UserV2Entity[] = await this.getAll();
+
+            const ignoreUsers: Set<string> = new Set([
+                '677428dffcee13e798bc6f09',
+                '6754afd1f5035ab83da457b5',
+                '67993401a78d21fa6369c044',
+                '6759bb5ef5035ab83da457b9',
+                '675e1acff5035ab83da457bc',
+                '677ef89e867c9bb4293adb30',
+                '67871474a78d21fa6369c042',
+            ]);
+
+            for (const userData of getAllMembers) {
+                if (ignoreUsers.has(userData._id)) {
+                    Logger.log(`ID ignorado: ${userData._id}`);
+                    deletedUsers.push({ id: userData._id, deleted: false });
+                    continue;
+                }
+
+                try {
+                    Logger.log(`ID sendo excluído: ${userData._id}`);
+                    // const user: UserV2Entity = await this.userV2Repository.findById(userData._id);
+
+                    await this.delete({id: userData._id});
+                } catch (error) {
+                    Logger.log(`Erro ao excluir usuário ${JSON.stringify(userData)} - ${error?.message}`);
+                }
+            }
+
+            return deletedUsers;
+        } catch (e) {
+            Logger.error(`> [Service][User V2][DELETE][deleteMany] catch - ${JSON.stringify(e)}`);
+            // throw new BadRequestException(e['message']);
+        }
+    }
 
     async delete(param: DeleteUserV2Dto): Promise<boolean> {
         Logger.log(`> [Service][User V2][DELETE] init`);
@@ -922,40 +969,48 @@ export class UserV2Service {
                 // Construção do link de atualização
                 const linkAtualizacao: string = `${process.env.APPLICATION_URL_PROD}/member?id=${user._id.toString()}&requestPassword=${requestPassword}`;
 
-                await this.twilioMessagingService.sendWhatsappMessageAtualizacaoCadastralWithTwilio({
-                    linkAtualizacao: linkAtualizacao,
-                    numeroWhatsapp: user.telefone,
-                    nome: user.nome,
-                });
+                if (user && user.telefone && user.telefone.length > 0) {
+                    await this.twilioMessagingService.sendWhatsappMessageAtualizacaoCadastralWithTwilio({
+                        linkAtualizacao: linkAtualizacao,
+                        numeroWhatsapp: user.telefone,
+                        nome: user.nome,
+                    });
+                } else {
+                    Logger.log(`Membro sem telefone: ${user.nome}`);
+                }
 
                 // Geração do HTML do e-mail
-                const html: string = this.generateUpdateEmailHtml(linkAtualizacao);
+                if (user && user.email && user.email.length > 0) {
+                    const html: string = this.generateUpdateEmailHtml(linkAtualizacao);
 
-                try {
-                    // Envio do e-mail
-                    const emailResponse = await this.emailService.sendEmail(
-                        user.email,
-                        'Atualize seus dados',
-                        'Realize a atualização de seus dados com a Igreja Batista do Brooklin',
-                        html
-                    );
+                    try {
+                        // Envio do e-mail
+                        const emailResponse = await this.emailService.sendEmail(
+                            user.email,
+                            'Atualize seus dados',
+                            'Realize a atualização de seus dados com a Igreja Batista do Brooklin',
+                            html
+                        );
 
-                    if (emailResponse.success) {
-                        Logger.log(`E-mail enviado com sucesso para ${user.email}`);
-                    } else {
-                        Logger.error(`Falha ao enviar e-mail para ${user.email}`);
+                        if (emailResponse.success) {
+                            Logger.log(`E-mail enviado com sucesso para ${user.email}`);
+                        } else {
+                            Logger.error(`Falha ao enviar e-mail para ${user.email}`);
+                        }
+                    } catch (emailError) {
+                        Logger.error(
+                            `Erro ao enviar e-mail para ${user.email}: ${JSON.stringify(emailError)}`
+                        );
+                        throw new BadRequestException(
+                            `Erro ao enviar e-mail: ${emailError.message || emailError}`
+                        );
                     }
-                } catch (emailError) {
-                    Logger.error(
-                        `Erro ao enviar e-mail para ${user.email}: ${JSON.stringify(emailError)}`
-                    );
-                    throw new BadRequestException(
-                        `Erro ao enviar e-mail: ${emailError.message || emailError}`
-                    );
+
+                    return 'Processo de envio de e-mails concluído!';
+                } else {
+                    Logger.log(`Membro sem email: ${user.nome}`);
                 }
             }
-
-            return 'Processo de envio de e-mails concluído!';
         } catch (e) {
             Logger.error(`Erro no processo de atualização: ${JSON.stringify(e)}`);
             throw new BadRequestException(e.message || 'Erro inesperado ao atualizar dados.');
