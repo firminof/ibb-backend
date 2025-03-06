@@ -53,6 +53,19 @@ export class UserV2Controller {
         return this.userV2Service.getAll();
     }
 
+    @Get('/total-membros')
+    @HttpCode(HttpStatus.OK)
+    @ApiResponse({
+        status: HttpStatus.OK,
+        type: UserV2Entity,
+        isArray: true
+    })
+    async getAllTotal(): Promise<{ total: number }> {
+        Logger.log(``);
+        Logger.log(`> [Controller][User V2][GET][getAllTotal] - init`);
+        return this.userV2Service.getAllTotal();
+    }
+
     @Get('diaconos')
     @HttpCode(HttpStatus.OK)
     @ApiResponse({
@@ -294,5 +307,13 @@ export class UserV2Controller {
         Logger.log(`> [Controller][User V2][POST][sendWhatsappMessage] data - ${JSON.stringify(data)}`);
         Logger.log(`> [Controller][User V2][POST][sendWhatsappMessage] membro - ${JSON.stringify(membro)}`);
         return this.twilioMessagingService.sendWhatsappMessagePedirOracaoWithTwilio(data, membro);
+    }
+
+    @Get('/login/find-user/:email')
+    @HttpCode(HttpStatus.OK)
+    @ApiResponse({status: HttpStatus.OK,})
+    async loginFindUserByEmail(@Param('email') email: string) {
+        Logger.log(`> [Controller][User V2][POST][loginFindUserByEmail] - init`);
+        return this.userV2Service.loginFindUserByEmail(email);
     }
 }

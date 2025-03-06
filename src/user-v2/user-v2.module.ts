@@ -8,9 +8,12 @@ import {AuthService} from "../auth/services/auth.service";
 import {TwilioMessagingService} from "../common/services/twilio-messaging.service";
 import {InviteV2Repository} from "./repository/invite-v2.repository";
 import {UploadService} from "./services/upload.service";
+import {AuthModule} from "../auth/auth.module";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([UserV2Repository, InviteV2Repository])],
+    imports: [
+        TypeOrmModule.forFeature([UserV2Repository, InviteV2Repository]),
+    ],
     controllers: [UserV2Controller],
     providers: [
         UserV2Repository,

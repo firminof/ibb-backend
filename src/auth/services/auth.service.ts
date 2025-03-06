@@ -29,36 +29,38 @@ export class AuthService {
 
     async registerUser(userInfo: UserInfo, password?: string) {
         Logger.log(`> [Service][Auth][registerUser]] - init`);
+
+        const auth = admin.auth(firebaseApp);
+        let randomPassword: string = '';
+        let emailVerified: boolean = false;
+
+        if (!password) {
+            randomPassword =
+                Math.random()           // Generate random number, eg: 0.123456
+                    .toString(36)  // Convert  to base-36 : "0.4fzyo82mvyr"
+                    .slice(-8);         // Cut off last 8 characters : "yo82mvyr";
+        } else {
+            randomPassword = password;
+            emailVerified = true;
+        }
+
+        let userFirebase: CreateRequest = {
+            password: randomPassword,
+            displayName: formatNome(userInfo.name),
+            emailVerified,
+        }
+
+        if (userInfo && userInfo.email.length > 0 && userInfo.email !== '') {
+            userFirebase.email = userInfo.email;
+        }
+
+        // if (userInfo && userInfo.phoneNumber.length > 0) {
+        //     userFirebase.phoneNumber = userInfo.phoneNumber && userInfo.phoneNumber.length > 0 ? userInfo.phoneNumber : ''
+        // }
+
+        Logger.debug(userFirebase)
+
         try {
-            const auth = admin.auth(firebaseApp);
-            let randomPassword: string = '';
-            let emailVerified: boolean = false;
-
-            if (!password) {
-                randomPassword =
-                    Math.random()           // Generate random number, eg: 0.123456
-                        .toString(36)  // Convert  to base-36 : "0.4fzyo82mvyr"
-                        .slice(-8);         // Cut off last 8 characters : "yo82mvyr";
-            } else {
-                randomPassword = password;
-                emailVerified = true;
-            }
-
-            let userFirebase: CreateRequest = {
-                password: randomPassword,
-                displayName: formatNome(userInfo.name),
-                emailVerified,
-            }
-
-            if (userInfo && userInfo.email.length > 0) {
-                userFirebase.email = userInfo.email;
-            }
-
-            if (userInfo && userInfo.phoneNumber.length > 0) {
-                userFirebase.phoneNumber = userInfo.phoneNumber && userInfo.phoneNumber.length > 0 ? userInfo.phoneNumber : ''
-            }
-
-            Logger.debug(userFirebase)
             const userRecord = await auth.createUser(userFirebase);
 
             await auth.setCustomUserClaims(userRecord.uid, {
@@ -73,7 +75,7 @@ export class AuthService {
             if (e.message.toString().includes('The user with the provided phone number already exists')) {
                 throw new BadRequestException('Número de telefone já cadastrado, tente com outro.');
             }
-            throw new BadRequestException(`Erro no firebase: ${e.message}`);
+            throw new BadRequestException(`Erro ao cadastrar no firebase: ${e.message}`);
         }
     }
 

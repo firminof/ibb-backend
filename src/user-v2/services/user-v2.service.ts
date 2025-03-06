@@ -19,6 +19,8 @@ import {InviteV2Entity} from "../domain/entity/invite-v2.entity";
 import {RequestUpdateV2Dto} from "../dto/request-update-v2.dto";
 import {TwilioMessagingService} from "../../common/services/twilio-messaging.service";
 import {UploadService} from "./upload.service";
+import {firebaseApp} from "../../auth/config/firebase.config";
+import * as admin from 'firebase-admin';
 
 @Injectable()
 export class UserV2Service {
@@ -52,6 +54,24 @@ export class UserV2Service {
 
         } catch (e) {
             Logger.log(`> [Service][User V2][GET][getAll] catch - ${JSON.stringify(e)}`);
+
+            if (e['message'] === 'No metadata for "UserV2Entity" was found.') {
+                throw new BadRequestException('Nenhum item encontrado na base de dados!');
+            }
+            throw new BadRequestException(e['message']);
+        }
+    }
+
+    async getAllTotal(): Promise<{ total: number }> {
+        Logger.log(`> [Service][User V2][GET][getAllTotal] - init`);
+        try {
+            const allMembers: UserV2Entity[] = await this.userV2Repository.getAll();
+            if (allMembers.length === 0) return {total: 0};
+
+            return {total: allMembers.length};
+
+        } catch (e) {
+            Logger.log(`> [Service][User V2][GET][getAllTotal] catch - ${JSON.stringify(e)}`);
 
             if (e['message'] === 'No metadata for "UserV2Entity" was found.') {
                 throw new BadRequestException('Nenhum item encontrado na base de dados!');
@@ -332,6 +352,34 @@ export class UserV2Service {
         }
     }
 
+    async loginFindUserByEmail(email: string) {
+        Logger.log(`> [Service][UserV2][POST][loginFindUserByEmail] - init`);
+        const auth = admin.auth(firebaseApp);
+        let returnData;
+
+        try {
+            returnData = await auth.getUserByEmail(email);
+        } catch (error) {
+            console.log(JSON.stringify(error));
+            if (error.errorInfo.code === 'auth/user-not-found') {
+                const member: UserV2Entity = await this.findByEmail(email);
+
+                if (member.autenticacao.providersInfo.length > 0) {
+                    if (member.autenticacao.providersInfo[0].uid) {
+                        return await auth.getUser(member.autenticacao.providersInfo[0].uid);
+                    }
+                }
+            }
+
+            // throw new BadRequestException(`Erro inesperado: ${error.errorInfo.message}`);
+            // if (error.errorInfo.message.toString().includes('There is no user record corresponding to the provided identifier')) {
+            //     throw new BadRequestException(`Membro não cadastrado, solicite um convite para fazer parte da nossa comunidade`);
+            // }
+        }
+
+        return returnData;
+    }
+
     private async mapMemberList(members: UserV2Entity[]): Promise<UserV2Entity[]> {
         try {
             return Promise.all(
@@ -473,7 +521,7 @@ export class UserV2Service {
                         //     // Ordena por data (mais recente primeiro)
                         //     return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
                         // }),
-                        foto: member.foto,
+                        foto: member.foto ? member.foto : '',
                     }
 
                     return user;
@@ -491,27 +539,17 @@ export class UserV2Service {
         let userFirebase;
 
         try {
-            if (data && data.email && data.email.length > 0) {
+            if (data.email.length > 0) {
                 user = await this.userV2Repository.findByEmail(data.email);
-                userFirebase = await this.authService.findUserByEmail(data.email);
 
                 if (user) {
                     throw new BadRequestException('Email já em uso!');
                 }
 
+                userFirebase = await this.authService.findUserByEmail(data.email);
+
                 if (userFirebase) {
                     throw new BadRequestException('Email já em uso no Firebase!');
-                }
-            } else if (data && data.telefone && data.telefone.length > 0) {
-                user = await this.userV2Repository.findByTelefone(formatPhoneNumber(data.telefone));
-                userFirebase = await this.authService.findUserByPhoneNumber(formatPhoneNumber(data.telefone));
-
-                if (user) {
-                    throw new BadRequestException('Telefone já em uso!');
-                }
-
-                if (userFirebase) {
-                    throw new BadRequestException('Telefone já em uso no Firebase!');
                 }
             }
 
@@ -566,27 +604,17 @@ export class UserV2Service {
         let userFirebase;
 
         try {
-            if (data && data.email && data.email.length > 0) {
-                user = await this.userV2Repository.findByEmail(data.email);
-                userFirebase = await this.authService.findUserByEmail(data.email);
+            user = await this.userV2Repository.findByEmail(data.email);
 
-                if (user) {
-                    throw new BadRequestException('Email já em uso!');
-                }
+            if (user) {
+                throw new BadRequestException('Email já em uso!');
+            }
+
+            if (data.email.length > 0) {
+                userFirebase = await this.authService.findUserByEmail(data.email);
 
                 if (userFirebase) {
                     throw new BadRequestException('Email já em uso no Firebase!');
-                }
-            } else if (data && data.telefone && data.telefone.length > 0) {
-                user = await this.userV2Repository.findByTelefone(formatPhoneNumber(data.telefone));
-                userFirebase = await this.authService.findUserByPhoneNumber(formatPhoneNumber(data.telefone));
-
-                if (user) {
-                    throw new BadRequestException('Telefone já em uso!');
-                }
-
-                if (userFirebase) {
-                    throw new BadRequestException('Telefone já em uso no Firebase!');
                 }
             }
 

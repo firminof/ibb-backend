@@ -26,4 +26,12 @@ export class AuthController {
         Logger.log(`> [Controller][Auth][POST][findUserByEmail] - init`);
         return this.authService.findUserByEmail(email);
     }
+
+    @Get('/find-user/by-id/:uid')
+    @HttpCode(HttpStatus.OK)
+    @ApiResponse({status: HttpStatus.OK,})
+    async findUserByUid(@Param('uid') uid: string) {
+        Logger.log(`> [Controller][Auth][POST][findUserByUid] - init`);
+        return this.authService.findUserByUid(uid);
+    }
 }
