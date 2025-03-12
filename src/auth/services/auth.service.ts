@@ -10,6 +10,7 @@ import {EmailService} from "../../user/service/email.service";
 import {TwilioMessagingService} from "../../common/services/twilio-messaging.service";
 import {UserService} from "../../user/service/user.service";
 import {UserV2Entity} from "../../user-v2/domain/entity/user-v2.entity";
+import {formatPhoneNumber} from "../../common/validations/telefone";
 
 export interface UserInfo {
     mongoId: string;
@@ -84,17 +85,23 @@ export class AuthService {
         try {
             const auth = admin.auth(firebaseApp);
 
+            const userInFirebase = await auth.getUser(uid);
+
             let userFirebase: UpdateRequest = {
                 displayName: formatNome(userInfo.name),
             }
 
-            if (userInfo && userInfo.email && userInfo.email.toString().length > 0) {
+            if (userInfo.email === '' && userInFirebase.email !== '') {
+                userFirebase.email = `${userInFirebase.email.split('@')[0]}_desativado@${userInFirebase.email.split('@')[1]}`;
+            }
+
+            if (userInfo.email !== '') {
                 userFirebase.email = userInfo.email;
             }
 
-            if (userInfo && userInfo.phoneNumber && userInfo.phoneNumber.toString().length > 0) {
-                userFirebase.phoneNumber = userInfo.phoneNumber && userInfo.phoneNumber.length > 0 ? userInfo.phoneNumber : ''
-            }
+            // if (userInfo && userInfo.phoneNumber && userInfo.phoneNumber.toString().length > 0) {
+            //     userFirebase.phoneNumber = userInfo.phoneNumber && userInfo.phoneNumber.length > 0 ? formatPhoneNumber(userInfo.phoneNumber) : ''
+            // }
 
             const userRecord = await auth.updateUser(uid, userFirebase);
 

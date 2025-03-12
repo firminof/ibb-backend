@@ -869,18 +869,18 @@ export class UserV2Service {
             data.updatedAt = new Date();
 
             // Realizar o update diretamente no banco
-            const updatedUserMongoDb = await this.userV2Repository.update(id, data);
+            await this.userV2Repository.update(id, data);
 
             // Retornar o estado atualizado do usuário
             const updatedUser: UserV2Entity = await this.userV2Repository.findById(id);
 
             // Realizar o update no firebase
             const savedFirebase = {
-                mongoId: updatedUserMongoDb.raw._id,
-                name: updatedUserMongoDb.raw.nome,
-                email: updatedUserMongoDb.raw.email,
-                role: updatedUserMongoDb.raw.role,
-                phoneNumber: updatedUserMongoDb.raw.telefone,
+                mongoId: updatedUser._id,
+                name: updatedUser.nome,
+                email: updatedUser.email,
+                role: updatedUser.role,
+                phoneNumber: updatedUser.telefone,
             };
 
             // Atualizar no Firebase
