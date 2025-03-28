@@ -995,7 +995,7 @@ export class UserV2Service {
                 }
 
                 // Construção do link de atualização
-                const linkAtualizacao: string = `${process.env.APPLICATION_URL_PROD}/member?id=${user._id.toString()}&requestPassword=${requestPassword}`;
+                const linkAtualizacao: string = `${process.env.APPLICATION_URL_PROD}/member?id=${user._id.toString()}&requestPassword=${requestPassword}&bypass=true&skipLogin=true`;
 
                 if (user && user.telefone && user.telefone.length > 0) {
                     await this.twilioMessagingService.sendWhatsappMessageAtualizacaoCadastralWithTwilio({
