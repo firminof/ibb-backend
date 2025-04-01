@@ -655,7 +655,15 @@ export class UserV2Service {
                 throw new BadRequestException('Convite já aceito!');
             }
 
-            throw new BadRequestException('Falha ao aceitar o convite, o mesmo pode ter sido removido!');
+            if (e['response']['message'].toString().includes('Email já em uso!')) {
+                throw new BadRequestException('Email em uso, tente com outro!');
+            }
+
+            if (e['response']['message'].toString().includes('Email já em uso no Firebase!')) {
+                throw new BadRequestException('Email em uso, tente com outro!');
+            }
+
+            throw new BadRequestException('Erro ao aceitar o convite, tente novamente!');
         }
     }
 
