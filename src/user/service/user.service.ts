@@ -11,25 +11,25 @@ export class UserService {
     ) {
     }
 
-    @OnEvent('user-service.forget-password.send')
-    async forgetPassword(data: { link: string, email: string }) {
-        Logger.log(`> [Service][User][forgetPassword] init`);
-        Logger.log(`> [Service][User][forgetPassword] - email: ${data.email}`);
-        try {
-            const user: UserV2Entity = await this.userRepository.findByEmail(data.email);
-            Logger.log(`> [Service][User][forgetPassword][findByEmail] - ${JSON.stringify(user)}`);
-
-            if (!user) {
-                throw new NotFoundException('Membro não encontrado!');
-            }
-
-            this.eventEmitter.emit('twillio-whatsapp.forget-password.send', {
-                link: data.link,
-                numeroWhatsapp: user.telefone
-            })
-        } catch (e) {
-            Logger.log(`> [Service][User][forgetPassword] catch - ${JSON.stringify(e)}`);
-            throw new BadRequestException(e['message']);
-        }
-    }
+    // @OnEvent('user-service.forget-password.send')
+    // async forgetPassword(data: { link: string, email: string }) {
+    //     Logger.log(`> [Service][User][forgetPassword] init`);
+    //     Logger.log(`> [Service][User][forgetPassword] - email: ${data.email}`);
+    //     try {
+    //         const user: UserV2Entity = await this.userRepository.findByEmail(data.email);
+    //         Logger.log(`> [Service][User][forgetPassword][findByEmail] - ${JSON.stringify(user)}`);
+    //
+    //         if (!user) {
+    //             throw new NotFoundException('Membro não encontrado!');
+    //         }
+    //
+    //         this.eventEmitter.emit('twillio-whatsapp.forget-password.send', {
+    //             link: data.link,
+    //             numeroWhatsapp: user.telefone
+    //         })
+    //     } catch (e) {
+    //         Logger.log(`> [Service][User][forgetPassword] catch - ${JSON.stringify(e)}`);
+    //         throw new BadRequestException(e['message']);
+    //     }
+    // }
 }

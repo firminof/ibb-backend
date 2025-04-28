@@ -5,7 +5,7 @@ import {HistoricoDto, UserV2Entity} from "../domain/entity/user-v2.entity";
 import {UserV2Repository} from "../repository/user-v2.repository";
 import {EmailService} from "../../user/service/email.service";
 import {AuthService} from "../../auth/services/auth.service";
-import {EventEmitter2} from "@nestjs/event-emitter";
+import {EventEmitter2, OnEvent} from "@nestjs/event-emitter";
 import {formatCPF, formatNome, formatTelefone, gerarHistorico} from "../../common/helpers/helpers";
 import {CivilStateEnumV2, Historico, IMember} from "../domain/entity/abstractions/user-v2.abstraction";
 import {CreateUserV2Dto} from "../dto/create-user-v2.dto";
@@ -1237,6 +1237,28 @@ export class UserV2Service {
             }
         } catch (e) {
             Logger.log(`> [Service][User][POST][sendInvite] catch - ${JSON.stringify(e)}`);
+            throw new BadRequestException(e['message']);
+        }
+    }
+
+    @OnEvent('user-service.forget-password.send')
+    async forgetPassword(data: { link: string, email: string }) {
+        Logger.log(`> [Service][User][forgetPassword] init`);
+        Logger.log(`> [Service][User][forgetPassword] - email: ${data.email}`);
+        try {
+            const user: UserV2Entity = await this.userV2Repository.findByEmail(data.email);
+            Logger.log(`> [Service][User][forgetPassword][findByEmail] - ${JSON.stringify(user)}`);
+
+            if (!user) {
+                throw new NotFoundException('Membro não encontrado!');
+            }
+
+            this.eventEmitter.emit('twillio-whatsapp.forget-password.send', {
+                link: data.link,
+                numeroWhatsapp: user.telefone
+            })
+        } catch (e) {
+            Logger.log(`> [Service][User][forgetPassword] catch - ${JSON.stringify(e)}`);
             throw new BadRequestException(e['message']);
         }
     }
