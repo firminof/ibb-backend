@@ -128,7 +128,7 @@ export class AuthService {
 
             const passwordResetLink = await auth.generatePasswordResetLink(email);
 
-            this.eventEmitter.emit('user-service.forget-password.send', {
+            this.eventEmitter.emit('user-service-v2.forget-password.send', {
                 link: passwordResetLink,
                 email
             })
@@ -267,7 +267,7 @@ export class AuthService {
                     </tr>
                     <tr>
                         <td align="center">
-                            <img src="http://cdn.mcauto-images-production.sendgrid.net/9b153d64518b45c6/8ec43570-853b-496f-9111-76bc28cdae49/1600x673.jpeg" alt="Imagem de Boas-Vindas" style="max-width: 100%; height: auto; border-radius: 10px;">
+                            <img src="http://cdn.mcauto-images-production.sendgrid.net/9b153d64518b45c6/d1e861d7-2d8a-4702-b0bb-158f58f22948/2245x945.png" alt="Imagem de Boas-Vindas" style="max-width: 100%; height: auto; border-radius: 10px;">
                         </td>
                     </tr>
                     <tr>
@@ -300,7 +300,7 @@ export class AuthService {
             if (sendEmailBySendGrid.success) {
                 return 'Email enviado com sucesso!'
             } else {
-                throw new BadRequestException('Falha ao enviar o email!');
+                console.error('Falha ao enviar o email!');
             }
         } catch (e) {
             Logger.log(`> [Service][Auth][sendEmailResetEmail] catch - ${JSON.stringify(e)}`);

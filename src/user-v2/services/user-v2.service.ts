@@ -1079,7 +1079,7 @@ export class UserV2Service {
                     </tr>
                     <tr>
                         <td align="center">
-                            <img src="http://cdn.mcauto-images-production.sendgrid.net/9b153d64518b45c6/8ec43570-853b-496f-9111-76bc28cdae49/1600x673.jpeg" alt="Imagem de Boas-Vindas" style="max-width: 100%; height: auto; border-radius: 10px;">
+                            <img src="http://cdn.mcauto-images-production.sendgrid.net/9b153d64518b45c6/d1e861d7-2d8a-4702-b0bb-158f58f22948/2245x945.png" alt="Imagem de Boas-Vindas" style="max-width: 100%; height: auto; border-radius: 10px;">
                         </td>
                     </tr>
                     <tr>
@@ -1192,7 +1192,7 @@ export class UserV2Service {
                     </tr>
                     <tr>
                         <td align="center">
-                            <img src="http://cdn.mcauto-images-production.sendgrid.net/9b153d64518b45c6/8ec43570-853b-496f-9111-76bc28cdae49/1600x673.jpeg" alt="Imagem de Boas-Vindas" style="max-width: 100%; height: auto; border-radius: 10px;">
+                            <img src="http://cdn.mcauto-images-production.sendgrid.net/9b153d64518b45c6/d1e861d7-2d8a-4702-b0bb-158f58f22948/2245x945.png" alt="Imagem de Boas-Vindas" style="max-width: 100%; height: auto; border-radius: 10px;">
                         </td>
                     </tr>
                     <tr>
@@ -1241,24 +1241,24 @@ export class UserV2Service {
         }
     }
 
-    @OnEvent('user-service.forget-password.send')
+    @OnEvent('user-service-v2.forget-password.send', {async: true})
     async forgetPassword(data: { link: string, email: string }) {
-        Logger.log(`> [Service][User][forgetPassword] init`);
-        Logger.log(`> [Service][User][forgetPassword] - email: ${data.email}`);
+        Logger.log(`> [Service][User - V2][forgetPassword] init`);
+        Logger.log(`> [Service][User - V2][forgetPassword] - email: ${data.email}`);
         try {
             const user: UserV2Entity = await this.userV2Repository.findByEmail(data.email);
-            Logger.log(`> [Service][User][forgetPassword][findByEmail] - ${JSON.stringify(user)}`);
+            Logger.log(`> [Service][User - V2][forgetPassword][findByEmail] - ok`);
 
             if (!user) {
                 throw new NotFoundException('Membro não encontrado!');
             }
 
-            this.eventEmitter.emit('twillio-whatsapp.forget-password.send', {
+            await this.twilioMessagingService.sendWhatsappMessageForgetPasswordWithTwilio({
                 link: data.link,
                 numeroWhatsapp: user.telefone
             })
         } catch (e) {
-            Logger.log(`> [Service][User][forgetPassword] catch - ${JSON.stringify(e)}`);
+            Logger.log(`> [Service][User - V2][forgetPassword] catch - ${JSON.stringify(e)}`);
             throw new BadRequestException(e['message']);
         }
     }

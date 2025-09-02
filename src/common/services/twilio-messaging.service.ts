@@ -156,7 +156,7 @@ _Esta mensagem foi enviada automaticamente, não responda._
         }
     }
 
-    @OnEvent('twillio-whatsapp.forget-password.send')
+    @OnEvent('twillio-whatsapp-v2.forget-password.send',{async: true})
     async sendWhatsappMessageForgetPasswordWithTwilio(data: { link: string, numeroWhatsapp: string }) {
         try {
             const treatedRecipient: string = formatToInternationalStandard(
@@ -171,7 +171,6 @@ Clique no link abaixo para mudar a senha.
 {{1}}
              */
 
-            Logger.log(``);
             Logger.log(`> [Service][Twillio][WhatsApp][ForgetPassword] para: ${treatedRecipient}`);
 
             const message = await client.messages.create({
