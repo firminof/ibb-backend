@@ -165,3 +165,12 @@ function formatValue(value: any): string {
         return String(value); // Retorna valores como estão
     }
 }
+
+export function generateRandomEmail(): string {
+    const providers = ["gmail.com", "yahoo.com", "outlook.com", "testmail.com"];
+    const randomName = Math.random().toString(36).substring(2, 10); // string aleatória
+    const randomNum = Math.floor(Math.random() * 10000); // número aleatório
+    const provider = providers[Math.floor(Math.random() * providers.length)];
+
+    return `${randomName}${randomNum}@${provider}`;
+}

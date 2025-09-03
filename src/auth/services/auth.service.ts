@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 import {EventEmitter2} from '@nestjs/event-emitter';
 import {firebaseApp} from "../config/firebase.config";
 import {CreateRequest, UpdateRequest} from "firebase-admin/lib/auth";
-import {formatNome} from "../../common/helpers/helpers";
+import {formatNome, generateRandomEmail} from "../../common/helpers/helpers";
 import {UserEntity} from "../../user/domain/entity/user.entity";
 import {SendEmailDto} from "../../user/dto/send-email.dto";
 import {EmailService} from "../../user/service/email.service";
@@ -92,7 +92,12 @@ export class AuthService {
             }
 
             if (userInfo.email === '' && userInFirebase.email !== '') {
-                userFirebase.email = `${userInFirebase.email.split('@')[0]}_desativado@${userInFirebase.email.split('@')[1]}`;
+                // TESTE
+                if (userInFirebase.email && userInFirebase.email.split('@')) {
+                    userFirebase.email = `${userInFirebase.email.split('@')[0]}_desativado@${userInFirebase.email.split('@')[1]}`;
+                } else {
+                    userFirebase.email = generateRandomEmail();
+                }
             }
 
             if (userInfo.email !== '') {
