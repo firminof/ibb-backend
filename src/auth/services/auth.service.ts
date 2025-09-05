@@ -104,10 +104,6 @@ export class AuthService {
                 userFirebase.email = userInfo.email;
             }
 
-            // if (userInfo && userInfo.phoneNumber && userInfo.phoneNumber.toString().length > 0) {
-            //     userFirebase.phoneNumber = userInfo.phoneNumber && userInfo.phoneNumber.length > 0 ? formatPhoneNumber(userInfo.phoneNumber) : ''
-            // }
-
             const userRecord = await auth.updateUser(uid, userFirebase);
 
             await auth.setCustomUserClaims(userRecord.uid, {
